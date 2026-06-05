@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import DashboardTab from './components/DashboardTab';
-import JemaatTab from './components/JemaatTab';
+import DataJemaat from './components/DataJemaat';
 import ProfilGerejaTab from './components/ProfilGerejaTab';
 import JadwalPengumumanTab from './components/JadwalPengumumanTab';
 import PelayananTab from './components/PelayananTab';
@@ -82,6 +82,14 @@ export default function App() {
   // Handlers for data modifications
   const handleAddJemaat = (newMember) => {
     setJemaat(prev => [...prev, newMember]);
+  };
+
+  const handleUpdateJemaat = (updatedMember) => {
+    setJemaat(prev => prev.map(item => item.id === updatedMember.id ? updatedMember : item));
+  };
+
+  const handleDeleteJemaat = (id) => {
+    setJemaat(prev => prev.filter(item => item.id !== id));
   };
 
   const handleSaveProfil = (updatedProfil) => {
@@ -170,9 +178,11 @@ export default function App() {
         );
       case 'jemaat':
         return (
-          <JemaatTab
+          <DataJemaat
             jemaat={jemaat}
             onAddJemaat={handleAddJemaat}
+            onUpdateJemaat={handleUpdateJemaat}
+            onDeleteJemaat={handleDeleteJemaat}
             accentClasses={accentClasses}
             externalOpenAddModal={quickActionJemaat}
             setExternalOpenAddModal={setQuickActionJemaat}
