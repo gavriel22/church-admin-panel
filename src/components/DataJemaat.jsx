@@ -1,4 +1,4 @@
-aimport { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, Plus, Filter, User, Phone, CheckCircle, XCircle, Edit, Trash2, Eye } from 'lucide-react';
 import Modal from './Modal';
 
