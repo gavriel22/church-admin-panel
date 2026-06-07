@@ -8,6 +8,7 @@ export default function Header({ activeTab, setIsSidebarOpen }) {
       case 'jemaat': return 'Data Jemaat';
       case 'jadwal': return 'Jadwal Ibadah';
       case 'pengumuman': return 'Pengumuman';
+      case 'event': return 'Kegiatan & Event';
       case 'keuangan': return 'Laporan Keuangan';
       case 'pelayanan': return 'Pelayanan';
       case 'pengaturan': return 'Pengaturan';

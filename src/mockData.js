@@ -370,3 +370,46 @@ export const initialKeuangan = {
     }
   ]
 };
+
+export const initialEvents = [
+  {
+    id: 1,
+    nama: "Kebaktian Kebangunan Rohani (KKR) Pemuda",
+    tanggal: "2026-06-12",
+    waktu: "18:00 WIB",
+    lokasi: "Gedung Utama (Sanctuary)",
+    deskripsi: "Ibadah raya kebangunan rohani bagi remaja dan pemuda se-Jakarta Pusat dengan pembicara Pdt. Dr. Stephen Tong. Mari ajak rekan-rekan Anda."
+  },
+  {
+    id: 2,
+    nama: "Aksi Sosial Donor Darah Kasih",
+    tanggal: "2026-06-15",
+    waktu: "09:00 - 13:00 WIB",
+    lokasi: "Lobi Aula Serbaguna Lantai 1",
+    deskripsi: "Bekerjasama dengan PMI DKI Jakarta, Gereja Kasih Karunia mengadakan aksi donor darah sebagai wujud pelayanan kasih kepada sesama yang membutuhkan darah."
+  },
+  {
+    id: 3,
+    nama: "Seminar Keluarga Kristen & Harmonis",
+    tanggal: "2026-06-20",
+    waktu: "10:00 - 14:00 WIB",
+    lokasi: "Aula Serbaguna Lantai 2",
+    deskripsi: "Seminar interaktif bagi pasangan suami-istri dan orang tua tentang mendidik anak di era digital berdasarkan nilai-nilai alkitabiah."
+  },
+  {
+    id: 4,
+    nama: "Retreat Sekolah Minggu Terpadu",
+    tanggal: "2026-06-25",
+    waktu: "08:00 WIB - Selesai",
+    lokasi: "Cianjur, Jawa Barat",
+    deskripsi: "Retreat khusus anak-anak Sekolah Minggu kelas besar untuk membina kemandirian, persekutuan, dan kecintaan pada firman Tuhan lewat alam terbuka."
+  },
+  {
+    id: 5,
+    nama: "Perayaan Paskah Bersama 2026",
+    tanggal: "2026-04-12",
+    waktu: "07:00 WIB",
+    lokasi: "Gedung Utama",
+    deskripsi: "Ibadah perayaan kebangkitan Yesus Kristus bagi seluruh keluarga jemaat, dilanjutkan ramah tamah dan lomba anak-anak."
+  }
+];

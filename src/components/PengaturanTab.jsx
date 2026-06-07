@@ -4,8 +4,7 @@ import { Palette, Database, RefreshCw, Check, AlertTriangle } from 'lucide-react
 export default function PengaturanTab({ 
   accentColor, 
   setAccentColor, 
-  onResetDatabase, 
-  accentClasses 
+  onResetDatabase 
 }) {
   const [showConfirmReset, setShowConfirmReset] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);

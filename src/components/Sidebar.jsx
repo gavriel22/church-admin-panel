@@ -7,16 +7,20 @@ import {
   Wallet, 
   HeartHandshake, 
   Settings, 
-  X 
+  X,
+  Globe,
+  Clock
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen, accentClasses }) {
   const menuItems = [
+    { id: 'landing', label: 'Halaman Publik', icon: Globe },
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'profil', label: 'Profil Gereja', icon: Church },
     { id: 'jemaat', label: 'Jemaat', icon: Users },
-    { id: 'jadwal', label: 'Jadwal Ibadah', icon: Calendar },
+    { id: 'jadwal', label: 'Jadwal Ibadah', icon: Clock },
     { id: 'pengumuman', label: 'Pengumuman', icon: Megaphone },
+    { id: 'event', label: 'Event Terdekat', icon: Calendar },
     { id: 'keuangan', label: 'Keuangan', icon: Wallet },
     { id: 'pelayanan', label: 'Pelayanan', icon: HeartHandshake },
     { id: 'pengaturan', label: 'Pengaturan', icon: Settings },
@@ -64,26 +68,30 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen, ac
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  setIsOpen(false); // Close sidebar on mobile after selection
-                }}
-                className={`
-                  w-full flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group
-                  ${isActive 
-                    ? `${accentClasses.bgLight} ${accentClasses.text}` 
-                    : 'text-stone-500 hover:text-stone-800 hover:bg-stone-50'
-                  }
-                `}
-              >
-                <Icon className={`
-                  w-[18px] h-[18px] mr-3 transition-colors
-                  ${isActive ? accentClasses.text : 'text-stone-400 group-hover:text-stone-600'}
-                `} />
-                {item.label}
-              </button>
+              <div key={item.id}>
+                {item.id === 'dashboard' && (
+                  <div className="my-2 border-t border-stone-100" />
+                )}
+                <button
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setIsOpen(false); // Close sidebar on mobile after selection
+                  }}
+                  className={`
+                    w-full flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group
+                    ${isActive 
+                      ? `${accentClasses.bgLight} ${accentClasses.text}` 
+                      : 'text-stone-500 hover:text-stone-800 hover:bg-stone-50'
+                    }
+                  `}
+                >
+                  <Icon className={`
+                    w-[18px] h-[18px] mr-3 transition-colors
+                    ${isActive ? accentClasses.text : 'text-stone-400 group-hover:text-stone-600'}
+                  `} />
+                  {item.label}
+                </button>
+              </div>
             );
           })}
         </nav>

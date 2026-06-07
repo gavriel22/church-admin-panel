@@ -4,8 +4,7 @@ import {
   Wallet, 
   Plus, 
   Megaphone, 
-  Calendar, 
-  ArrowUpRight 
+  Calendar 
 } from 'lucide-react';
 
 export default function DashboardTab({ 

@@ -1,36 +1,36 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import DashboardTab from './components/DashboardTab';
 import DataJemaat from './components/DataJemaat';
 import ProfilGerejaTab from './components/ProfilGerejaTab';
-import JadwalPengumumanTab from './components/JadwalPengumumanTab';
+import JadwalTab from './components/JadwalTab';
+import PengumumanTab from './components/PengumumanTab';
+import EventTab from './components/EventTab';
 import PelayananTab from './components/PelayananTab';
 import KeuanganTab from './components/KeuanganTab';
 import PengaturanTab from './components/PengaturanTab';
-
-import { 
-  initialProfil, 
-  initialJemaat, 
-  initialJadwal, 
-  initialPengumuman, 
-  initialPelayanan, 
-  initialKeuangan 
-} from './mockData';
+import LandingPage from './components/LandingPage';
+import { ChurchContext } from './context/ChurchContext';
 
 export default function App() {
+  const {
+    profil,
+    jemaat,
+    pelayanan,
+    keuangan,
+    jadwal,
+    saveProfil,
+    addJemaat,
+    updateJemaat,
+    deleteJemaat,
+    resetDatabase
+  } = useContext(ChurchContext);
+
   // Navigation & Menu Drawer States
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('landing');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [accentColor, setAccentColor] = useState('amber');
-
-  // Unified Database States
-  const [profil, setProfil] = useState({ ...initialProfil });
-  const [jemaat, setJemaat] = useState([...initialJemaat]);
-  const [jadwal, setJadwal] = useState([...initialJadwal]);
-  const [pengumuman, setPengumuman] = useState([...initialPengumuman]);
-  const [pelayanan, setPelayanan] = useState([...initialPelayanan]);
-  const [keuangan, setKeuangan] = useState({ ...initialKeuangan });
 
   // Quick Action Modal Trigger States
   const [quickActionJemaat, setQuickActionJemaat] = useState(false);
@@ -79,57 +79,6 @@ export default function App() {
 
   const accentClasses = getAccentClasses(accentColor);
 
-  // Handlers for data modifications
-  const handleAddJemaat = (newMember) => {
-    setJemaat(prev => [...prev, newMember]);
-  };
-
-  const handleUpdateJemaat = (updatedMember) => {
-    setJemaat(prev => prev.map(item => item.id === updatedMember.id ? updatedMember : item));
-  };
-
-  const handleDeleteJemaat = (id) => {
-    setJemaat(prev => prev.filter(item => item.id !== id));
-  };
-
-  const handleSaveProfil = (updatedProfil) => {
-    setProfil(updatedProfil);
-  };
-
-  const handleAddPengumuman = (newAnnouncement) => {
-    setPengumuman(prev => [...prev, newAnnouncement]);
-  };
-
-  const handleAddJadwal = (newSchedule) => {
-    setJadwal(prev => [...prev, newSchedule]);
-  };
-
-  const handleAddPelayanan = (newService) => {
-    setPelayanan(prev => [...prev, newService]);
-  };
-
-  const handleAddTransaksi = (newTx) => {
-    setKeuangan(prev => {
-      const updatedBalance = newTx.tipe === 'Penerimaan'
-        ? prev.saldo + newTx.nominal
-        : prev.saldo - newTx.nominal;
-      return {
-        saldo: updatedBalance,
-        transaksi: [newTx, ...prev.transaksi]
-      };
-    });
-  };
-
-  // Reset database back to original defaults
-  const handleResetDatabase = () => {
-    setProfil({ ...initialProfil });
-    setJemaat([...initialJemaat]);
-    setJadwal([...initialJadwal]);
-    setPengumuman([...initialPengumuman]);
-    setPelayanan([...initialPelayanan]);
-    setKeuangan({ ...initialKeuangan });
-  };
-
   // Central Router for dashboard quick actions
   const handleQuickAction = (actionKey) => {
     switch (actionKey) {
@@ -172,7 +121,7 @@ export default function App() {
         return (
           <ProfilGerejaTab
             profil={profil}
-            onSaveProfil={handleSaveProfil}
+            onSaveProfil={saveProfil}
             accentClasses={accentClasses}
           />
         );
@@ -180,9 +129,9 @@ export default function App() {
         return (
           <DataJemaat
             jemaat={jemaat}
-            onAddJemaat={handleAddJemaat}
-            onUpdateJemaat={handleUpdateJemaat}
-            onDeleteJemaat={handleDeleteJemaat}
+            onAddJemaat={addJemaat}
+            onUpdateJemaat={updateJemaat}
+            onDeleteJemaat={deleteJemaat}
             accentClasses={accentClasses}
             externalOpenAddModal={quickActionJemaat}
             setExternalOpenAddModal={setQuickActionJemaat}
@@ -190,11 +139,7 @@ export default function App() {
         );
       case 'jadwal':
         return (
-          <JadwalPengumumanTab
-            pengumuman={pengumuman}
-            onAddPengumuman={handleAddPengumuman}
-            jadwal={jadwal}
-            onAddJadwal={handleAddJadwal}
+          <JadwalTab
             accentClasses={accentClasses}
             externalOpenJadwalModal={quickActionJadwal}
             setExternalOpenJadwalModal={setQuickActionJadwal}
@@ -202,21 +147,21 @@ export default function App() {
         );
       case 'pengumuman':
         return (
-          <JadwalPengumumanTab
-            pengumuman={pengumuman}
-            onAddPengumuman={handleAddPengumuman}
-            jadwal={jadwal}
-            onAddJadwal={handleAddJadwal}
+          <PengumumanTab
             accentClasses={accentClasses}
             externalOpenPengumumanModal={quickActionPengumuman}
             setExternalOpenPengumumanModal={setQuickActionPengumuman}
           />
         );
+      case 'event':
+        return (
+          <EventTab
+            accentClasses={accentClasses}
+          />
+        );
       case 'keuangan':
         return (
           <KeuanganTab
-            keuangan={keuangan}
-            onAddTransaksi={handleAddTransaksi}
             accentClasses={accentClasses}
             externalOpenAddModal={quickActionKeuangan}
             setExternalOpenAddModal={setQuickActionKeuangan}
@@ -225,8 +170,6 @@ export default function App() {
       case 'pelayanan':
         return (
           <PelayananTab
-            pelayanan={pelayanan}
-            onAddPelayanan={handleAddPelayanan}
             accentClasses={accentClasses}
           />
         );
@@ -235,8 +178,7 @@ export default function App() {
           <PengaturanTab
             accentColor={accentColor}
             setAccentColor={setAccentColor}
-            onResetDatabase={handleResetDatabase}
-            accentClasses={accentClasses}
+            onResetDatabase={resetDatabase}
           />
         );
       default:
@@ -247,6 +189,15 @@ export default function App() {
         );
     }
   };
+
+  if (activeTab === 'landing') {
+    return (
+      <LandingPage
+        onNavigateToDashboard={() => setActiveTab('dashboard')}
+        accentClasses={accentClasses}
+      />
+    );
+  }
 
   return (
     <div className="flex h-screen bg-stone-50 overflow-hidden font-sans">

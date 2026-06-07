@@ -1,16 +1,71 @@
-import { useState } from 'react';
-import { Wallet, TrendingUp, TrendingDown, Plus, Calendar as CalendarIcon, FileText, IndianRupee } from 'lucide-react';
+import { useState, useContext } from 'react';
+import { Wallet, TrendingUp, TrendingDown, Plus, Calendar as CalendarIcon, Edit, Trash2 } from 'lucide-react';
+import { ChurchContext } from '../context/ChurchContext';
 import Modal from './Modal';
 
-export default function KeuanganTab({ keuangan, onAddTransaksi, accentClasses, externalOpenAddModal, setExternalOpenAddModal }) {
+export default function KeuanganTab({ accentClasses, externalOpenAddModal, setExternalOpenAddModal }) {
+  const { 
+    keuangan, 
+    addTransaksi, 
+    updateTransaksi, 
+    deleteTransaksi 
+  } = useContext(ChurchContext);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+
+  const initialFormState = {
     tipe: 'Penerimaan',
     kategori: 'Persembahan Mingguan',
     nominal: '',
     tanggal: '',
     deskripsi: ''
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
+
+  const handleOpenCreateModal = () => {
+    setIsEditMode(false);
+    setFormData(initialFormState);
+    setIsModalOpen(true);
+  };
+
+  const [prevExternalOpen, setPrevExternalOpen] = useState(externalOpenAddModal);
+  if (externalOpenAddModal !== prevExternalOpen) {
+    setPrevExternalOpen(externalOpenAddModal);
+    if (externalOpenAddModal) {
+      setIsEditMode(false);
+      setFormData(initialFormState);
+      setIsModalOpen(true);
+    }
+  }
+
+  const handleOpenEditModal = (item) => {
+    setIsEditMode(true);
+    setSelectedId(item.id);
+    setFormData({
+      tipe: item.tipe || 'Penerimaan',
+      kategori: item.kategori || 'Persembahan Mingguan',
+      nominal: item.nominal || '',
+      tanggal: item.tanggal || '',
+      deskripsi: item.deskripsi || ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    if (setExternalOpenAddModal) setExternalOpenAddModal(false);
+  };
+
+  const handleDelete = (id, category, amount) => {
+    const formattedAmount = formatRupiah(amount);
+    const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus transaksi "${category}" senilai ${formattedAmount}?`);
+    if (confirmed) {
+      deleteTransaksi(id);
+    }
+  };
 
   // Calculate totals
   const totalPemasukan = keuangan.transaksi
@@ -40,34 +95,23 @@ export default function KeuanganTab({ keuangan, onAddTransaksi, accentClasses, e
       return;
     }
 
-    onAddTransaksi({
-      id: Date.now(),
+    const transactionData = {
+      id: isEditMode ? selectedId : Date.now(),
       tanggal: formData.tanggal,
       tipe: formData.tipe,
       kategori: formData.kategori,
       nominal: Number(formData.nominal),
       deskripsi: formData.deskripsi
-    });
+    };
 
-    setFormData({
-      tipe: 'Penerimaan',
-      kategori: 'Persembahan Mingguan',
-      nominal: '',
-      tanggal: '',
-      deskripsi: ''
-    });
-    
-    setIsModalOpen(false);
-    if (setExternalOpenAddModal) setExternalOpenAddModal(false);
-  };
+    if (isEditMode) {
+      updateTransaksi(transactionData);
+    } else {
+      addTransaksi(transactionData);
+    }
 
-  // Sync external dashboard quick action trigger
-  if (externalOpenAddModal && !isModalOpen) {
-    setIsModalOpen(true);
-  }
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    if (setExternalOpenAddModal) setExternalOpenAddModal(false);
+    setFormData(initialFormState);
+    handleCloseModal();
   };
 
   return (
@@ -79,7 +123,7 @@ export default function KeuanganTab({ keuangan, onAddTransaksi, accentClasses, e
           <h2 className="text-lg font-bold text-stone-900 tracking-tight">Laporan Keuangan & Persembahan</h2>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenCreateModal}
           className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold shadow-xs ${accentClasses.bgPrimary} accent-transition focus:outline-none`}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -123,7 +167,7 @@ export default function KeuanganTab({ keuangan, onAddTransaksi, accentClasses, e
       {/* Transaction History Section */}
       <div className="bg-white border border-stone-200/60 rounded-xl overflow-hidden shadow-xs">
         <div className="px-5 py-4 border-b border-stone-100 bg-stone-50/20">
-          <h3 className="text-xs font-bold text-stone-800 uppercase tracking-wider">Riwayat Arus Kas Jemaat</h3>
+          <h3 className="text-xs font-bold text-stone-850 uppercase tracking-wider">Riwayat Arus Kas Jemaat</h3>
         </div>
 
         <div className="divide-y divide-stone-100">
@@ -158,11 +202,28 @@ export default function KeuanganTab({ keuangan, onAddTransaksi, accentClasses, e
                   </div>
                 </div>
 
-                {/* Right side: Amount */}
-                <div className="sm:text-right">
-                  <span className={`text-xs font-bold ${t.tipe === 'Penerimaan' ? 'text-green-700' : 'text-red-700'}`}>
+                {/* Right side: Amount & CRUD actions */}
+                <div className="sm:text-right flex items-center justify-between sm:justify-end gap-4">
+                  <span className={`text-xs font-bold whitespace-nowrap ${t.tipe === 'Penerimaan' ? 'text-green-700' : 'text-red-700'}`}>
                     {t.tipe === 'Penerimaan' ? '+' : '-'} {formatRupiah(t.nominal)}
                   </span>
+                  
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={() => handleOpenEditModal(t)}
+                      className="p-1 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors focus:outline-none"
+                      title="Edit Transaksi"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(t.id, t.kategori, t.nominal)}
+                      className="p-1 rounded text-stone-400 hover:text-red-650 hover:bg-red-50 transition-colors focus:outline-none"
+                      title="Hapus Transaksi"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
@@ -174,8 +235,8 @@ export default function KeuanganTab({ keuangan, onAddTransaksi, accentClasses, e
         </div>
       </div>
 
-      {/* RECORD TRANSACTION MODAL */}
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title="Catat Transaksi Keuangan Baru">
+      {/* RECORD / EDIT TRANSACTION MODAL */}
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={isEditMode ? "Ubah Catatan Transaksi Keuangan" : "Catat Transaksi Keuangan Baru"}>
         <form onSubmit={handleSubmit} className="space-y-4 text-stone-700">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Tipe Transaksi */}
@@ -276,7 +337,7 @@ export default function KeuanganTab({ keuangan, onAddTransaksi, accentClasses, e
               type="submit"
               className={`px-4 py-2 rounded-lg text-xs font-bold text-white shadow-xs ${accentClasses.bgPrimary} transition-colors focus:outline-none`}
             >
-              Simpan Transaksi
+              {isEditMode ? 'Simpan Perubahan' : 'Simpan Transaksi'}
             </button>
           </div>
         </form>

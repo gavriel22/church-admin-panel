@@ -1,16 +1,55 @@
-import { useState } from 'react';
-import { HeartHandshake, Users, Clock, User, Plus } from 'lucide-react';
+import { useState, useContext } from 'react';
+import { HeartHandshake, Users, Clock, User, Plus, Edit, Trash2 } from 'lucide-react';
+import { ChurchContext } from '../context/ChurchContext';
 import Modal from './Modal';
 
-export default function PelayananTab({ pelayanan, onAddPelayanan, accentClasses }) {
+export default function PelayananTab({ accentClasses }) {
+  const { 
+    pelayanan, 
+    addPelayanan, 
+    updatePelayanan, 
+    deletePelayanan 
+  } = useContext(ChurchContext);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+
+  const initialFormState = {
     nama: '',
     deskripsi: '',
     anggota: '',
     pertemuan: '',
     ketua: ''
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
+
+  const handleOpenCreateModal = () => {
+    setIsEditMode(false);
+    setFormData(initialFormState);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (item) => {
+    setIsEditMode(true);
+    setSelectedId(item.id);
+    setFormData({
+      nama: item.nama || '',
+      deskripsi: item.deskripsi || '',
+      anggota: item.anggota || '',
+      pertemuan: item.pertemuan || '',
+      ketua: item.ketua || ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id, name) => {
+    const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus bidang pelayanan "${name}"?`);
+    if (confirmed) {
+      deletePelayanan(id);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -19,22 +58,27 @@ export default function PelayananTab({ pelayanan, onAddPelayanan, accentClasses 
       return;
     }
 
-    onAddPelayanan({
-      id: Date.now(),
-      nama: formData.nama,
-      deskripsi: formData.deskripsi,
-      anggota: Number(formData.anggota) || 0,
-      pertemuan: formData.pertemuan || 'Hubungi Ketua',
-      ketua: formData.ketua
-    });
+    if (isEditMode) {
+      updatePelayanan({
+        id: selectedId,
+        nama: formData.nama,
+        deskripsi: formData.deskripsi,
+        anggota: Number(formData.anggota) || 0,
+        pertemuan: formData.pertemuan || 'Hubungi Ketua',
+        ketua: formData.ketua
+      });
+    } else {
+      addPelayanan({
+        id: Date.now(),
+        nama: formData.nama,
+        deskripsi: formData.deskripsi,
+        anggota: Number(formData.anggota) || 0,
+        pertemuan: formData.pertemuan || 'Hubungi Ketua',
+        ketua: formData.ketua
+      });
+    }
 
-    setFormData({
-      nama: '',
-      deskripsi: '',
-      anggota: '',
-      pertemuan: '',
-      ketua: ''
-    });
+    setFormData(initialFormState);
     setIsModalOpen(false);
   };
 
@@ -47,7 +91,7 @@ export default function PelayananTab({ pelayanan, onAddPelayanan, accentClasses 
           <h2 className="text-lg font-bold text-stone-900 tracking-tight">Bidang Pelayanan & Komunitas</h2>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenCreateModal}
           className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold shadow-xs ${accentClasses.bgPrimary} accent-transition focus:outline-none`}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -58,10 +102,29 @@ export default function PelayananTab({ pelayanan, onAddPelayanan, accentClasses 
       {/* Grid of Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {pelayanan.map((item) => (
-          <div key={item.id} className="bg-white border border-stone-200/60 p-5 rounded-xl shadow-xs flex flex-col justify-between hover:border-stone-300 transition-colors">
+          <div key={item.id} className="bg-white border border-stone-200/60 p-5 rounded-xl shadow-xs flex flex-col justify-between hover:border-stone-300 transition-colors relative group">
+            
+            {/* Action Buttons Top Right */}
+            <div className="absolute top-4 right-4 flex items-center space-x-1 opacity-60 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => handleOpenEditModal(item)}
+                className="p-1 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-50 border border-transparent hover:border-stone-200/60 transition-all focus:outline-none"
+                title="Edit Pelayanan"
+              >
+                <Edit className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => handleDelete(item.id, item.nama)}
+                className="p-1 rounded text-stone-400 hover:text-red-650 hover:bg-red-50 border border-transparent hover:border-red-200/30 transition-all focus:outline-none"
+                title="Hapus Pelayanan"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             <div className="space-y-3">
               {/* Card Header (Icon & Name) */}
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 pr-12">
                 <div className={`p-2 rounded-lg ${accentClasses.light}`}>
                   <HeartHandshake className="w-5 h-5" />
                 </div>
@@ -93,8 +156,12 @@ export default function PelayananTab({ pelayanan, onAddPelayanan, accentClasses 
         ))}
       </div>
 
-      {/* ADD PELAYANAN MODAL */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Tambah Bidang Pelayanan Baru">
+      {/* ADD / EDIT PELAYANAN MODAL */}
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title={isEditMode ? "Ubah Detail Bidang Pelayanan" : "Tambah Bidang Pelayanan Baru"}
+      >
         <form onSubmit={handleSubmit} className="space-y-4 text-stone-700">
           <div className="space-y-1">
             <label className="text-[10.5px] font-bold text-stone-500 uppercase tracking-wider block">Nama Bidang Pelayanan / Komunitas *</label>
@@ -169,7 +236,7 @@ export default function PelayananTab({ pelayanan, onAddPelayanan, accentClasses 
               type="submit"
               className={`px-4 py-2 rounded-lg text-xs font-bold text-white shadow-xs ${accentClasses.bgPrimary} transition-colors focus:outline-none`}
             >
-              Simpan Pelayanan
+              {isEditMode ? 'Simpan Perubahan' : 'Simpan Pelayanan'}
             </button>
           </div>
         </form>

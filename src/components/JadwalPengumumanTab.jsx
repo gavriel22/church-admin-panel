@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Megaphone, Calendar, Pin, Clock, MapPin, Plus, AlertCircle } from 'lucide-react';
+import { Megaphone, Calendar, Pin, Clock, MapPin, Plus } from 'lucide-react';
 import Modal from './Modal';
 
 export default function JadwalPengumumanTab({ 
@@ -172,7 +172,7 @@ export default function JadwalPengumumanTab({
               <h3 className="text-base font-bold text-stone-850 tracking-tight">Jadwal Layanan Ibadah</h3>
             </div>
             <button
-              onClick={() => setIsJalwalModalOpen(true)}
+              onClick={() => setIsJadwalModalOpen(true)}
               className={`flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold shadow-xs ${accentClasses.light} border border-transparent hover:brightness-95 transition-all`}
             >
               <Plus className="w-3.5 h-3.5 mr-1" />

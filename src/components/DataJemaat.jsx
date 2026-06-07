@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Plus, Filter, User, Phone, CheckCircle, XCircle, Edit, Trash2, Eye } from 'lucide-react';
+import { Search, Plus, Filter, Phone, CheckCircle, XCircle, Edit, Trash2 } from 'lucide-react';
 import Modal from './Modal';
 
 export default function DataJemaat({ 
@@ -331,7 +331,6 @@ export default function DataJemaat({
               {filteredJemaat.length > 0 ? (
                 filteredJemaat.map((member) => {
                   const age = getAge(member.tanggal_lahir);
-                  const category = getAgeCategory(member.tanggal_lahir);
                   
                   return (
                     <tr 

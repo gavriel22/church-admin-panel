@@ -6,6 +6,12 @@ export default function ProfilGerejaTab({ profil, onSaveProfil, accentClasses })
   const [newMisiItem, setNewMisiItem] = useState('');
   const [showToast, setShowToast] = useState(false);
 
+  const [prevProfil, setPrevProfil] = useState(profil);
+  if (profil !== prevProfil) {
+    setPrevProfil(profil);
+    setLocalProfil({ ...profil });
+  }
+
   // Dynamic calculations
   const currentYear = 2026; // System year based on local time
   const churchAge = localProfil.tahunBerdiri 
@@ -270,7 +276,18 @@ export default function ProfilGerejaTab({ profil, onSaveProfil, accentClasses })
                     type="text"
                     value={localProfil.namaGembala}
                     onChange={(e) => handleChange('namaGembala', e.target.value)}
-                    className="w-full px-3.5 py-2 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-400 bg-stone-50/30 focus:bg-white"
+                    className="w-full px-3.5 py-2 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-stone-50/30 focus:bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Foto Gembala Sidang (URL)</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: https://images.unsplash.com/..."
+                    value={localProfil.fotoGembala || ''}
+                    onChange={(e) => handleChange('fotoGembala', e.target.value)}
+                    className="w-full px-3.5 py-2 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-stone-50/30 focus:bg-white"
                   />
                 </div>
 
