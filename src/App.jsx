@@ -51,7 +51,7 @@ export default function App() {
         };
       case 'indigo':
         return {
-          bgPrimary: 'bg-indigo-655 hover:bg-indigo-700 text-white',
+          bgPrimary: 'bg-indigo-600 hover:bg-indigo-700 text-white',
           text: 'text-indigo-700',
           light: 'bg-indigo-50 text-indigo-800 border-indigo-200/50',
           badge: 'bg-indigo-50 text-indigo-700 border-indigo-200/55',

@@ -80,7 +80,7 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen, ac
                   className={`
                     w-full flex items-center px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group
                     ${isActive 
-                      ? `${accentClasses.bgLight} ${accentClasses.text}` 
+                      ? `${accentClasses.light} border` 
                       : 'text-stone-500 hover:text-stone-800 hover:bg-stone-50'
                     }
                   `}
