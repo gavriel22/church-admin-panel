@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useContext } from 'react';
 import { Search, Plus, Filter, Phone, CheckCircle, XCircle, Edit, Trash2 } from 'lucide-react';
 import Modal from './Modal';
+import { ChurchContext } from '../context/ChurchContext';
 
 export default function DataJemaat({ 
   jemaat, 
@@ -11,6 +12,7 @@ export default function DataJemaat({
   externalOpenAddModal, 
   setExternalOpenAddModal 
 }) {
+  const { kategoriUsia } = useContext(ChurchContext);
   // UI states
   const [searchTerm, setSearchTerm] = useState('');
   const [ageFilter, setAgeFilter] = useState('Semua');
@@ -55,13 +57,12 @@ export default function DataJemaat({
     return currentYear - birthYear;
   };
 
-  // Classify age category
+  // Classify age category dynamically based on context settings
   const getAgeCategory = (birthDateString) => {
     const age = getAge(birthDateString);
-    if (age < 12) return 'Anak-anak';
-    if (age >= 12 && age <= 25) return 'Pemuda';
-    if (age >= 26 && age <= 59) return 'Dewasa';
-    return 'Lansia';
+    if (!kategoriUsia || kategoriUsia.length === 0) return 'Tidak Terkategori';
+    const matched = kategoriUsia.find(cat => age >= cat.usia_min && age <= cat.usia_max);
+    return matched ? matched.nama_kategori : 'Tidak Terkategori';
   };
 
   // Filter Combinations with useMemo
@@ -270,10 +271,11 @@ export default function DataJemaat({
               className="w-full py-1.5 px-2.5 border border-stone-200 rounded-lg text-xs bg-white text-stone-700 font-semibold focus:outline-none focus:border-stone-400"
             >
               <option value="Semua">Semua Usia</option>
-              <option value="Anak-anak">Anak-anak (&lt;12 thn)</option>
-              <option value="Pemuda">Pemuda (12-25 thn)</option>
-              <option value="Dewasa">Dewasa (26-59 thn)</option>
-              <option value="Lansia">Lansia (&ge;60 thn)</option>
+              {kategoriUsia && kategoriUsia.map((cat) => (
+                <option key={cat.id} value={cat.nama_kategori}>
+                  {cat.nama_kategori} ({cat.usia_min}-{cat.usia_max} thn)
+                </option>
+              ))}
             </select>
           </div>
 
@@ -323,6 +325,7 @@ export default function DataJemaat({
                 <th className="px-6 py-3.5">Kelompok Sel</th>
                 <th className="px-6 py-3.5">Kontak</th>
                 <th className="px-6 py-3.5">Usia / JK / Goldar</th>
+                <th className="px-6 py-3.5">Kategori Usia</th>
                 <th className="px-6 py-3.5">Status</th>
                 <th className="px-6 py-3.5 text-right">Aksi</th>
               </tr>
@@ -370,8 +373,15 @@ export default function DataJemaat({
                       <td className="px-6 py-4">
                         <div>
                           <span className="font-semibold text-stone-700">{age} Thn ({member.jenis_kelamin === 'Laki-laki' ? 'P' : 'W'})</span>
-                          <span className="block text-[10px] text-stone-400 font-semibold mt-0.5">Goldar: {member.golongan_darah}</span>
+                          <span className="block text-[10px] text-stone-400 font-semibold mt-0.5 font-sans">Goldar: {member.golongan_darah}</span>
                         </div>
+                      </td>
+
+                      {/* Kategori Usia */}
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-stone-50 text-stone-700 border border-stone-200/40 uppercase tracking-wider">
+                          {getAgeCategory(member.tanggal_lahir)}
+                        </span>
                       </td>
 
                       {/* Status */}
@@ -411,7 +421,7 @@ export default function DataJemaat({
                 })
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-stone-450 text-xs">
+                  <td colSpan="8" className="px-6 py-12 text-center text-stone-450 text-xs">
                     Tidak ada data jemaat ditemukan yang cocok dengan kriteria pencarian atau filter.
                   </td>
                 </tr>

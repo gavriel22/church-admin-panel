@@ -1,11 +1,91 @@
-import { useState } from 'react';
-import { Palette, Database, RefreshCw, Check, AlertTriangle } from 'lucide-react';
+import { useState, useContext } from 'react';
+import { Palette, Database, RefreshCw, Check, AlertTriangle, Plus, Edit, Trash2, Calendar } from 'lucide-react';
+import { ChurchContext } from '../context/ChurchContext';
 
 export default function PengaturanTab({ 
   accentColor, 
   setAccentColor, 
   onResetDatabase 
 }) {
+  const { 
+    kategoriUsia, 
+    addKategoriUsia, 
+    updateKategoriUsia, 
+    deleteKategoriUsia 
+  } = useContext(ChurchContext);
+
+  // CRUD state for Age Category
+  const [katUsiaForm, setKatUsiaForm] = useState({
+    nama_kategori: '',
+    usia_min: '',
+    usia_max: ''
+  });
+  const [isEditingKatUsia, setIsEditingKatUsia] = useState(false);
+  const [editingKatUsiaId, setEditingKatUsiaId] = useState(null);
+
+  const handleKatUsiaSubmit = (e) => {
+    e.preventDefault();
+    if (!katUsiaForm.nama_kategori || katUsiaForm.usia_min === '' || katUsiaForm.usia_max === '') {
+      alert('Mohon lengkapi semua input kategori usia.');
+      return;
+    }
+
+    const min = Number(katUsiaForm.usia_min);
+    const max = Number(katUsiaForm.usia_max);
+
+    if (min < 0 || max < 0) {
+      alert('Usia tidak boleh bernilai negatif.');
+      return;
+    }
+    if (min > max) {
+      alert('Usia minimum tidak boleh lebih besar dari usia maksimum.');
+      return;
+    }
+
+    const data = {
+      id: isEditingKatUsia ? editingKatUsiaId : Date.now(),
+      nama_kategori: katUsiaForm.nama_kategori,
+      usia_min: min,
+      usia_max: max
+    };
+
+    if (isEditingKatUsia) {
+      updateKategoriUsia(data);
+      setIsEditingKatUsia(false);
+      setEditingKatUsiaId(null);
+    } else {
+      addKategoriUsia(data);
+    }
+
+    setKatUsiaForm({ nama_kategori: '', usia_min: '', usia_max: '' });
+  };
+
+  const handleStartEditKatUsia = (item) => {
+    setIsEditingKatUsia(true);
+    setEditingKatUsiaId(item.id);
+    setKatUsiaForm({
+      nama_kategori: item.nama_kategori,
+      usia_min: item.usia_min,
+      usia_max: item.usia_max
+    });
+  };
+
+  const handleCancelEditKatUsia = () => {
+    setIsEditingKatUsia(false);
+    setEditingKatUsiaId(null);
+    setKatUsiaForm({ nama_kategori: '', usia_min: '', usia_max: '' });
+  };
+
+  const handleDeleteKatUsia = (id, nama) => {
+    const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus kategori usia "${nama}"?`);
+    if (confirmed) {
+      deleteKategoriUsia(id);
+      if (isEditingKatUsia && editingKatUsiaId === id) {
+        handleCancelEditKatUsia();
+      }
+    }
+  };
+
   const [showConfirmReset, setShowConfirmReset] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
 
@@ -134,6 +214,134 @@ export default function PengaturanTab({
               </button>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Age Category Settings Card */}
+      <div className="bg-white border border-stone-200/60 p-5 rounded-xl shadow-xs space-y-5">
+        <div className="flex items-center space-x-2 border-b border-stone-100 pb-2.5">
+          <Calendar className="w-4.5 h-4.5 text-stone-400" />
+          <h3 className="text-sm font-semibold text-stone-850">Pengaturan Kategori Usia Jemaat</h3>
+        </div>
+
+        <p className="text-[11px] text-stone-500 leading-relaxed">
+          Kelola batas rentang usia secara dinamis untuk mengelompokkan jemaat (misal: Anak-anak, Pemuda, Dewasa, Lansia). Perubahan di sini akan langsung memperbarui filter pencarian dan klasifikasi kolom Kategori Usia pada modul Data Jemaat.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left Column: Form */}
+          <div className="border border-stone-100 p-4 rounded-xl bg-stone-50/20 space-y-4 h-fit">
+            <h4 className="text-[11px] font-bold text-stone-850 uppercase tracking-wider">
+              {isEditingKatUsia ? 'Edit Kategori Usia' : 'Tambah Kategori Usia'}
+            </h4>
+            <form onSubmit={handleKatUsiaSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Nama Kategori *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Balita, Remaja"
+                  value={katUsiaForm.nama_kategori}
+                  onChange={(e) => setKatUsiaForm({ ...katUsiaForm, nama_kategori: e.target.value })}
+                  className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Usia Min (Thn) *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    max="150"
+                    placeholder="0"
+                    value={katUsiaForm.usia_min}
+                    onChange={(e) => setKatUsiaForm({ ...katUsiaForm, usia_min: e.target.value })}
+                    className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Usia Max (Thn) *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    max="150"
+                    placeholder="12"
+                    value={katUsiaForm.usia_max}
+                    onChange={(e) => setKatUsiaForm({ ...katUsiaForm, usia_max: e.target.value })}
+                    className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                {isEditingKatUsia && (
+                  <button
+                    type="button"
+                    onClick={handleCancelEditKatUsia}
+                    className="flex-1 py-1.5 border border-stone-250 hover:bg-stone-50 rounded-lg text-xs font-semibold text-stone-650 transition-colors focus:outline-none"
+                  >
+                    Batal
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="flex-1 py-1.5 bg-stone-800 hover:bg-stone-900 text-white rounded-lg text-xs font-bold transition-colors focus:outline-none"
+                >
+                  {isEditingKatUsia ? 'Simpan' : 'Tambah'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Right Columns: Table */}
+          <div className="md:col-span-2 border border-stone-100 rounded-xl overflow-hidden bg-white">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-stone-50/70 text-stone-550 border-b border-stone-150 uppercase tracking-wider text-[9px] font-bold">
+                  <th className="py-2.5 px-4">Nama Kategori</th>
+                  <th className="py-2.5 px-4">Rentang Usia</th>
+                  <th className="py-2.5 px-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100 font-medium">
+                {kategoriUsia && kategoriUsia.length > 0 ? (
+                  kategoriUsia.map((item) => (
+                    <tr key={item.id} className="hover:bg-stone-50/35 transition-colors">
+                      <td className="py-2.5 px-4 font-bold text-stone-800">{item.nama_kategori}</td>
+                      <td className="py-2.5 px-4 text-stone-500">{item.usia_min} - {item.usia_max} tahun</td>
+                      <td className="py-2.5 px-4 text-right">
+                        <div className="inline-flex items-center space-x-1">
+                          <button
+                            onClick={() => handleStartEditKatUsia(item)}
+                            className="p-1 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors focus:outline-none"
+                            title="Edit Kategori"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteKatUsia(item.id, item.nama_kategori)}
+                            className="p-1 rounded text-stone-400 hover:text-red-650 hover:bg-red-50 transition-colors focus:outline-none"
+                            title="Hapus Kategori"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" className="py-8 text-center text-stone-400 text-xs italic">
+                      Belum ada kategori usia yang dikonfigurasi.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

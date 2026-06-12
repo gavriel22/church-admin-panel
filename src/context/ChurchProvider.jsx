@@ -7,7 +7,8 @@ import {
   initialPelayanan, 
   initialKeuangan,
   initialEvents,
-  initialKategoriKantong
+  initialKategoriKantong,
+  initialKategoriUsia
 } from '../mockData';
 import { ChurchContext } from './ChurchContext';
 
@@ -57,6 +58,11 @@ export function ChurchProvider({ children }) {
     return saved ? JSON.parse(saved) : [...initialKategoriKantong];
   });
 
+  const [kategoriUsia, setKategoriUsia] = useState(() => {
+    const saved = localStorage.getItem('church_kategori_usia');
+    return saved ? JSON.parse(saved) : [...initialKategoriUsia];
+  });
+
   // Save to LocalStorage whenever state changes to maintain persistence
   useEffect(() => {
     localStorage.setItem('church_profil', JSON.stringify(profil));
@@ -89,6 +95,10 @@ export function ChurchProvider({ children }) {
   useEffect(() => {
     localStorage.setItem('church_kategori_kantong', JSON.stringify(kategoriKantong));
   }, [kategoriKantong]);
+
+  useEffect(() => {
+    localStorage.setItem('church_kategori_usia', JSON.stringify(kategoriUsia));
+  }, [kategoriUsia]);
 
   // CRUD Handlers
   
@@ -222,6 +232,17 @@ export function ChurchProvider({ children }) {
     setKategoriKantong(prev => prev.filter(item => item.id !== id));
   };
 
+  // 9. Kategori Usia
+  const addKategoriUsia = (item) => {
+    setKategoriUsia(prev => [...prev, item]);
+  };
+  const updateKategoriUsia = (updated) => {
+    setKategoriUsia(prev => prev.map(item => item.id === updated.id ? updated : item));
+  };
+  const deleteKategoriUsia = (id) => {
+    setKategoriUsia(prev => prev.filter(item => item.id !== id));
+  };
+
   // Reset database back to original defaults
   const resetDatabase = () => {
     setProfil({
@@ -235,6 +256,7 @@ export function ChurchProvider({ children }) {
     setKeuangan({ ...initialKeuangan });
     setEvents([...initialEvents]);
     setKategoriKantong([...initialKategoriKantong]);
+    setKategoriUsia([...initialKategoriUsia]);
   };
 
   return (
@@ -247,6 +269,7 @@ export function ChurchProvider({ children }) {
       keuangan,
       events,
       kategoriKantong,
+      kategoriUsia,
       saveProfil,
       addJemaat,
       updateJemaat,
@@ -269,6 +292,9 @@ export function ChurchProvider({ children }) {
       addKategoriKantong,
       updateKategoriKantong,
       deleteKategoriKantong,
+      addKategoriUsia,
+      updateKategoriUsia,
+      deleteKategoriUsia,
       resetDatabase
     }}>
       {children}

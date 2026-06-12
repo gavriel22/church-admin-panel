@@ -437,3 +437,10 @@ export const initialEvents = [
     deskripsi: "Ibadah perayaan kebangkitan Yesus Kristus bagi seluruh keluarga jemaat, dilanjutkan ramah tamah dan lomba anak-anak."
   }
 ];
+
+export const initialKategoriUsia = [
+  { id: 1, nama_kategori: "Anak-anak", usia_min: 0, usia_max: 11 },
+  { id: 2, nama_kategori: "Pemuda", usia_min: 12, usia_max: 25 },
+  { id: 3, nama_kategori: "Dewasa", usia_min: 26, usia_max: 59 },
+  { id: 4, nama_kategori: "Lansia", usia_min: 60, usia_max: 150 }
+];

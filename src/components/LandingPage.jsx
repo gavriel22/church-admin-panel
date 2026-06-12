@@ -46,6 +46,9 @@ export default function LandingPage({
   const currentYear = new Date().getFullYear();
   const usiaGereja = currentYear - tahunBerdiri;
   const totalJemaatAktif = jemaat.filter(item => item.status === 'Aktif').length;
+  const totalKK = new Set(jemaat.filter(item => item.no_kk && item.no_kk !== '-').map(item => item.no_kk)).size;
+  const totalLakiLaki = jemaat.filter(item => item.jenis_kelamin === 'Laki-laki' && item.status === 'Aktif').length;
+  const totalPerempuan = jemaat.filter(item => item.jenis_kelamin === 'Perempuan' && item.status === 'Aktif').length;
 
   // 1. Pelayanan Kami: Max 6 cards
   const limitedPelayanan = pelayanan.slice(0, 6);
@@ -154,18 +157,19 @@ export default function LandingPage({
       </nav>
 
       {/* 2. Hero Section */}
-      <section id="hero" className="relative px-6 py-24 sm:py-32 overflow-hidden flex flex-col items-center justify-center text-center">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <section id="hero" className="max-w-6xl mx-auto px-6 py-16 sm:py-20 flex flex-col md:flex-row items-center gap-10 md:gap-16">
+        {/* Left column: Text */}
+        <div className="flex-1 space-y-6 text-left">
           <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase border ${accentClasses.badge || 'bg-amber-50 text-amber-700 border-amber-200'}`}>
             Selamat Datang
           </span>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-stone-900 leading-tight">
             {namaGereja}
           </h1>
-          <p className="text-lg text-stone-500 font-light max-w-xl mx-auto leading-relaxed">
+          <p className="text-lg text-stone-500 font-light leading-relaxed">
             {tagline}
           </p>
-          <div className="pt-4">
+          <div className="pt-2">
             <a 
               href="#jadwal"
               onClick={(e) => handleScrollToSection(e, 'jadwal')}
@@ -176,24 +180,43 @@ export default function LandingPage({
             </a>
           </div>
         </div>
-      </section>
 
-      {/* 3. Statistik Ringkas */}
-      <section className="bg-white border-y border-stone-100 py-12 px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 gap-8 divide-x divide-stone-150">
-          <div className="text-center">
-            <p className="text-3xl sm:text-4xl font-semibold text-stone-900 tracking-tight">{usiaGereja} <span className="text-lg font-normal text-stone-400">Tahun</span></p>
-            <p className="text-xs font-medium uppercase tracking-wider text-stone-400 mt-2">Usia Gereja</p>
+        {/* Right column: Image */}
+        <div className="flex-1 w-full flex justify-center">
+          <div className="relative p-2 bg-white rounded-2xl border border-stone-200/50 shadow-sm w-full max-w-lg">
+            <img 
+              src="https://images.unsplash.com/photo-1478147427282-58a87a120781?auto=format&fit=crop&q=80&w=800&h=500" 
+              alt="Gedung Gereja Kasih Karunia" 
+              className="rounded-xl object-cover aspect-[16/10] w-full"
+            />
           </div>
-          <div className="text-center">
-            <p className="text-3xl sm:text-4xl font-semibold text-stone-900 tracking-tight">{totalJemaatAktif} <span className="text-lg font-normal text-stone-400">Jemaat</span></p>
-            <p className="text-xs font-medium uppercase tracking-wider text-stone-400 mt-2">Total Jemaat Aktif</p>
+        </div>
+      </section>
+ 
+      {/* 3. Statistik Ringkas */}
+      <section className="bg-white border-y border-stone-100 py-8 px-6">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center divide-y md:divide-y-0 md:divide-x divide-stone-150">
+          <div className="p-3">
+            <p className="text-2xl sm:text-3xl font-semibold text-stone-900 tracking-tight">{totalJemaatAktif}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mt-1">Total Jemaat Aktif</p>
+          </div>
+          <div className="p-3 pt-6 md:pt-3">
+            <p className="text-2xl sm:text-3xl font-semibold text-stone-900 tracking-tight">{totalKK}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mt-1">Jumlah Kartu Keluarga</p>
+          </div>
+          <div className="p-3 pt-6 md:pt-3">
+            <p className="text-2xl sm:text-3xl font-semibold text-stone-900 tracking-tight">{totalLakiLaki}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mt-1">Total Laki-laki</p>
+          </div>
+          <div className="p-3 pt-6 md:pt-3">
+            <p className="text-2xl sm:text-3xl font-semibold text-stone-900 tracking-tight">{totalPerempuan}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mt-1">Total Perempuan</p>
           </div>
         </div>
       </section>
 
       {/* 4. Tentang Kami */}
-      <section id="tentang" className="max-w-5xl mx-auto px-6 py-20 sm:py-28 space-y-16">
+      <section id="tentang" className="max-w-5xl mx-auto px-6 py-12 sm:py-16 space-y-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
           <div className="lg:col-span-5 space-y-4">
             <span className={`text-[10px] font-bold tracking-widest uppercase ${accentClasses.text || 'text-amber-700'}`}>
@@ -247,7 +270,7 @@ export default function LandingPage({
       </section>
 
       {/* 5. Profil Gembala Sidang (New Section) */}
-      <section id="gembala" className="bg-white border-y border-stone-100 py-20 sm:py-28 px-6">
+      <section id="gembala" className="bg-white border-y border-stone-100 py-12 sm:py-16 px-6">
         <div className="max-w-5xl mx-auto space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <span className={`text-[10px] font-bold tracking-widest uppercase ${accentClasses.text || 'text-amber-700'}`}>
@@ -288,7 +311,7 @@ export default function LandingPage({
       </section>
 
       {/* 6. Jadwal Ibadah (No Limitation) */}
-      <section id="jadwal" className="max-w-5xl mx-auto py-20 sm:py-28 px-6 space-y-12">
+      <section id="jadwal" className="max-w-5xl mx-auto py-12 sm:py-16 px-6 space-y-12">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
           <span className={`text-[10px] font-bold tracking-widest uppercase ${accentClasses.text || 'text-amber-700'}`}>
             Jadwal Ibadah
@@ -334,7 +357,7 @@ export default function LandingPage({
       </section>
 
       {/* 7. Pelayanan Kami (Max 6 Cards) */}
-      <section id="pelayanan" className="bg-white border-y border-stone-100 py-20 sm:py-28 px-6 space-y-12">
+      <section id="pelayanan" className="bg-white border-y border-stone-100 py-12 sm:py-16 px-6 space-y-12">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
           <span className={`text-[10px] font-bold tracking-widest uppercase ${accentClasses.text || 'text-amber-700'}`}>
             Pelayanan Kami
@@ -376,7 +399,7 @@ export default function LandingPage({
       </section>
 
       {/* 8. Pengumuman Terdekat (Max 6 Cards, Pinned First) */}
-      <section id="pengumuman" className="max-w-5xl mx-auto py-20 sm:py-28 px-6 space-y-12">
+      <section id="pengumuman" className="max-w-5xl mx-auto py-12 sm:py-16 px-6 space-y-12">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
           <span className={`text-[10px] font-bold tracking-widest uppercase ${accentClasses.text || 'text-amber-700'}`}>
             Pengumuman
@@ -429,7 +452,7 @@ export default function LandingPage({
 
       {/* 9. Event Terdekat (New Section - Max 4 Cards, Chronological, Upcoming only) */}
       {upcomingEvents.length > 0 && (
-        <section id="acara" className="bg-white border-y border-stone-100 py-20 sm:py-28 px-6 space-y-12">
+        <section id="acara" className="bg-white border-y border-stone-100 py-12 sm:py-16 px-6 space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <span className={`text-[10px] font-bold tracking-widest uppercase ${accentClasses.text || 'text-amber-700'}`}>
               Agenda Acara
