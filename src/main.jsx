@@ -4,6 +4,11 @@ import './index.css'
 import App from './App.jsx'
 import { ChurchProvider } from './context/ChurchProvider.jsx'
 
+if (window.location.search.includes('mockConfirm')) {
+  window.confirm = () => true;
+}
+
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ChurchProvider>

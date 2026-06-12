@@ -1,33 +1,95 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useMemo } from 'react';
 import { Wallet, TrendingUp, TrendingDown, Plus, Calendar as CalendarIcon, Edit, Trash2 } from 'lucide-react';
 import { ChurchContext } from '../context/ChurchContext';
 import Modal from './Modal';
+
+const BadgeColors = [
+  { name: 'Merah', class: 'bg-red-100 text-red-800 border-red-200/60' },
+  { name: 'Kuning', class: 'bg-amber-100 text-amber-800 border-amber-200/60' },
+  { name: 'Hijau', class: 'bg-green-100 text-green-800 border-green-200/60' },
+  { name: 'Biru', class: 'bg-blue-100 text-blue-800 border-blue-200/60' },
+  { name: 'Ungu', class: 'bg-purple-100 text-purple-800 border-purple-200/60' },
+  { name: 'Pink', class: 'bg-pink-100 text-pink-800 border-pink-200/60' },
+  { name: 'Teal', class: 'bg-teal-100 text-teal-800 border-teal-200/60' },
+  { name: 'Indigo', class: 'bg-indigo-100 text-indigo-800 border-indigo-200/60' },
+  { name: 'Abu-abu', class: 'bg-stone-100 text-stone-850 border-stone-200/60' },
+];
 
 export default function KeuanganTab({ accentClasses, externalOpenAddModal, setExternalOpenAddModal }) {
   const { 
     keuangan, 
     addTransaksi, 
     updateTransaksi, 
-    deleteTransaksi 
+    deleteTransaksi,
+    kategoriKantong,
+    addKategoriKantong,
+    updateKategoriKantong,
+    deleteKategoriKantong
   } = useContext(ChurchContext);
+
+  const [activeSubTab, setActiveSubTab] = useState('catatan'); // 'catatan' or 'kategori'
+  const [selectedFilterBag, setSelectedFilterBag] = useState('all');
+
+  // Compute pocket balances dynamically (using normalized string keys)
+  const bagBalances = useMemo(() => {
+    const balances = {};
+    if (kategoriKantong) {
+      kategoriKantong.forEach(kat => {
+        balances[String(kat.id)] = 0;
+      });
+    }
+    if (keuangan && keuangan.transaksi) {
+      keuangan.transaksi.forEach(t => {
+        if (t.tipe === 'Penerimaan' && t.alokasi_kantong_id) {
+          const key = String(t.alokasi_kantong_id);
+          balances[key] = (balances[key] || 0) + t.nominal;
+        }
+      });
+    }
+    return balances;
+  }, [keuangan.transaksi, kategoriKantong]);
+
+  // Filter and sort transactions (default date-descending)
+  const filteredAndSortedTransactions = useMemo(() => {
+    if (!keuangan || !keuangan.transaksi) return [];
+    let list = [...keuangan.transaksi];
+
+    // Filter by selected kantong category (only Penerimaan is associated with bags)
+    if (selectedFilterBag && selectedFilterBag !== 'all') {
+      list = list.filter(t => t.tipe === 'Penerimaan' && String(t.alokasi_kantong_id) === String(selectedFilterBag));
+    }
+
+    // Sort by date descending (newest first), and by ID descending if dates are equal
+    list.sort((a, b) => {
+      const dateB = new Date(b.tanggal);
+      const dateA = new Date(a.tanggal);
+      if (dateB - dateA !== 0) {
+        return dateB - dateA;
+      }
+      return b.id - a.id;
+    });
+
+    return list;
+  }, [keuangan.transaksi, selectedFilterBag]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
-  const initialFormState = {
+  const getInitialFormState = () => ({
     tipe: 'Penerimaan',
     kategori: 'Persembahan Mingguan',
     nominal: '',
     tanggal: '',
-    deskripsi: ''
-  };
+    deskripsi: '',
+    alokasi_kantong_id: (kategoriKantong && kategoriKantong.length > 0) ? String(kategoriKantong[0].id) : ''
+  });
 
-  const [formData, setFormData] = useState(initialFormState);
+  const [formData, setFormData] = useState(getInitialFormState());
 
   const handleOpenCreateModal = () => {
     setIsEditMode(false);
-    setFormData(initialFormState);
+    setFormData(getInitialFormState());
     setIsModalOpen(true);
   };
 
@@ -36,7 +98,7 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
     setPrevExternalOpen(externalOpenAddModal);
     if (externalOpenAddModal) {
       setIsEditMode(false);
-      setFormData(initialFormState);
+      setFormData(getInitialFormState());
       setIsModalOpen(true);
     }
   }
@@ -49,7 +111,8 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
       kategori: item.kategori || 'Persembahan Mingguan',
       nominal: item.nominal || '',
       tanggal: item.tanggal || '',
-      deskripsi: item.deskripsi || ''
+      deskripsi: item.deskripsi || '',
+      alokasi_kantong_id: item.alokasi_kantong_id ? String(item.alokasi_kantong_id) : ((kategoriKantong && kategoriKantong.length > 0) ? String(kategoriKantong[0].id) : '')
     });
     setIsModalOpen(true);
   };
@@ -64,6 +127,66 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
     const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus transaksi "${category}" senilai ${formattedAmount}?`);
     if (confirmed) {
       deleteTransaksi(id);
+    }
+  };
+
+  // Kategori Kantong CRUD state and handlers
+  const initialKatForm = {
+    nama_kantong: '',
+    deskripsi_alokasi: '',
+    warna_badge: 'bg-red-100 text-red-800 border-red-200/60'
+  };
+  const [katForm, setKatForm] = useState(initialKatForm);
+  const [isEditingKat, setIsEditingKat] = useState(false);
+  const [editingKatId, setEditingKatId] = useState(null);
+
+  const handleStartKatEdit = (item) => {
+    setIsEditingKat(true);
+    setEditingKatId(item.id);
+    setKatForm({
+      nama_kantong: item.nama_kantong || '',
+      deskripsi_alokasi: item.deskripsi_alokasi || '',
+      warna_badge: item.warna_badge || 'bg-red-100 text-red-800 border-red-200/60'
+    });
+  };
+
+  const handleCancelKatEdit = () => {
+    setIsEditingKat(false);
+    setEditingKatId(null);
+    setKatForm(initialKatForm);
+  };
+
+  const handleKatSubmit = (e) => {
+    e.preventDefault();
+    if (!katForm.nama_kantong || !katForm.deskripsi_alokasi) {
+      alert('Mohon isi nama kantong dan deskripsi alokasi.');
+      return;
+    }
+
+    const itemData = {
+      id: isEditingKat ? editingKatId : Date.now(),
+      nama_kantong: katForm.nama_kantong,
+      deskripsi_alokasi: katForm.deskripsi_alokasi,
+      warna_badge: katForm.warna_badge
+    };
+
+    if (isEditingKat) {
+      updateKategoriKantong(itemData);
+      setIsEditingKat(false);
+      setEditingKatId(null);
+    } else {
+      addKategoriKantong(itemData);
+    }
+    setKatForm(initialKatForm);
+  };
+
+  const handleKatDelete = (id, nama) => {
+    const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus kategori kantong "${nama}"?`);
+    if (confirmed) {
+      deleteKategoriKantong(id);
+      if (isEditingKat && editingKatId === id) {
+        handleCancelKatEdit();
+      }
     }
   };
 
@@ -95,13 +218,25 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
       return;
     }
 
+    if (formData.tipe === 'Penerimaan') {
+      if (!kategoriKantong || kategoriKantong.length === 0) {
+        alert('Mohon buat minimal satu Kategori Kantong terlebih dahulu di Tab Pengaturan Kategori Kantong.');
+        return;
+      }
+      if (!formData.alokasi_kantong_id) {
+        alert('Mohon pilih alokasi kantong persembahan.');
+        return;
+      }
+    }
+
     const transactionData = {
       id: isEditMode ? selectedId : Date.now(),
       tanggal: formData.tanggal,
       tipe: formData.tipe,
       kategori: formData.kategori,
       nominal: Number(formData.nominal),
-      deskripsi: formData.deskripsi
+      deskripsi: formData.deskripsi,
+      alokasi_kantong_id: formData.tipe === 'Penerimaan' ? Number(formData.alokasi_kantong_id) : undefined
     };
 
     if (isEditMode) {
@@ -110,7 +245,7 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
       addTransaksi(transactionData);
     }
 
-    setFormData(initialFormState);
+    setFormData(getInitialFormState());
     handleCloseModal();
   };
 
@@ -122,118 +257,346 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
           <p className="text-xs text-stone-400 font-medium">Transparansi Finansial</p>
           <h2 className="text-lg font-bold text-stone-900 tracking-tight">Laporan Keuangan & Persembahan</h2>
         </div>
+        {activeSubTab === 'catatan' && (
+          <button
+            onClick={handleOpenCreateModal}
+            className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold shadow-xs ${accentClasses.bgPrimary} accent-transition focus:outline-none`}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Catat Transaksi
+          </button>
+        )}
+      </div>
+
+      {/* Navigation Sub-Tabs */}
+      <div className="flex border-b border-stone-200">
         <button
-          onClick={handleOpenCreateModal}
-          className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold shadow-xs ${accentClasses.bgPrimary} accent-transition focus:outline-none`}
+          onClick={() => setActiveSubTab('catatan')}
+          className={`pb-2.5 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all focus:outline-none ${
+            activeSubTab === 'catatan'
+              ? `${accentClasses.text} border-current`
+              : 'border-transparent text-stone-400 hover:text-stone-600'
+          }`}
         >
-          <Plus className="w-4 h-4 mr-2" />
-          Catat Transaksi
+          Catatan Persembahan
+        </button>
+        <button
+          onClick={() => setActiveSubTab('kategori')}
+          className={`pb-2.5 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all focus:outline-none ${
+            activeSubTab === 'kategori'
+              ? `${accentClasses.text} border-current`
+              : 'border-transparent text-stone-400 hover:text-stone-600'
+          }`}
+        >
+          Pengaturan Kategori Kantong
         </button>
       </div>
 
-      {/* Cash Flow Summary Widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Card Saldo Kas */}
-        <div className="bg-white border border-stone-200/60 p-5 rounded-xl shadow-xs space-y-2">
-          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Saldo Kas Saat Ini</span>
-          <p className="text-xl font-bold text-stone-900">{formatRupiah(currentBalance)}</p>
-          <div className="flex items-center space-x-1.5 text-[10.5px] text-stone-400 font-medium pt-1">
-            <Wallet className="w-3.5 h-3.5" />
-            <span>Kas internal gereja</span>
+      {activeSubTab === 'catatan' ? (
+        <>
+          {/* Cash Flow Summary Widgets */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Card Saldo Kas */}
+            <div className="bg-white border border-stone-200/60 p-5 rounded-xl shadow-xs space-y-2">
+              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Saldo Kas Saat Ini</span>
+              <p className="text-xl font-bold text-stone-900">{formatRupiah(currentBalance)}</p>
+              <div className="flex items-center space-x-1.5 text-[10.5px] text-stone-400 font-medium pt-1">
+                <Wallet className="w-3.5 h-3.5" />
+                <span>Kas internal gereja</span>
+              </div>
+            </div>
+
+            {/* Card Total Pemasukan */}
+            <div className="bg-white border border-stone-200/60 p-5 rounded-xl shadow-xs space-y-2">
+              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Total Penerimaan</span>
+              <p className="text-xl font-bold text-green-650">{formatRupiah(totalPemasukan)}</p>
+              <div className="flex items-center space-x-1.5 text-[10.5px] text-green-650 font-medium pt-1">
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span>Total dana masuk</span>
+              </div>
+            </div>
+
+            {/* Card Total Pengeluaran */}
+            <div className="bg-white border border-stone-200/60 p-5 rounded-xl shadow-xs space-y-2">
+              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Total Pengeluaran</span>
+              <p className="text-xl font-bold text-red-650">{formatRupiah(totalPengeluaran)}</p>
+              <div className="flex items-center space-x-1.5 text-[10.5px] text-red-650 font-medium pt-1">
+                <TrendingDown className="w-3.5 h-3.5" />
+                <span>Total pengeluaran operasional</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Card Total Pemasukan */}
-        <div className="bg-white border border-stone-200/60 p-5 rounded-xl shadow-xs space-y-2">
-          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Total Penerimaan</span>
-          <p className="text-xl font-bold text-green-650">{formatRupiah(totalPemasukan)}</p>
-          <div className="flex items-center space-x-1.5 text-[10.5px] text-green-650 font-medium pt-1">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>Total dana masuk</span>
-          </div>
-        </div>
-
-        {/* Card Total Pengeluaran */}
-        <div className="bg-white border border-stone-200/60 p-5 rounded-xl shadow-xs space-y-2">
-          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Total Pengeluaran</span>
-          <p className="text-xl font-bold text-red-650">{formatRupiah(totalPengeluaran)}</p>
-          <div className="flex items-center space-x-1.5 text-[10.5px] text-red-650 font-medium pt-1">
-            <TrendingDown className="w-3.5 h-3.5" />
-            <span>Total pengeluaran operasional</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Transaction History Section */}
-      <div className="bg-white border border-stone-200/60 rounded-xl overflow-hidden shadow-xs">
-        <div className="px-5 py-4 border-b border-stone-100 bg-stone-50/20">
-          <h3 className="text-xs font-bold text-stone-850 uppercase tracking-wider">Riwayat Arus Kas Jemaat</h3>
-        </div>
-
-        <div className="divide-y divide-stone-100">
-          {keuangan.transaksi.length > 0 ? (
-            keuangan.transaksi.map((t) => (
-              <div key={t.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-stone-50/50 transition-colors">
-                {/* Left side: Icon + Kategori + Description */}
-                <div className="flex items-start space-x-3.5">
-                  <div className={`p-2 rounded-lg mt-0.5 ${
-                    t.tipe === 'Penerimaan' 
-                      ? 'bg-green-50 text-green-600 border border-green-200/40' 
-                      : 'bg-red-50/50 text-red-600 border border-red-200/30'
-                  }`}>
-                    {t.tipe === 'Penerimaan' ? <TrendingUp className="w-4.5 h-4.5" /> : <TrendingDown className="w-4.5 h-4.5" />}
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-bold text-stone-850">{t.kategori}</span>
-                      <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.25 rounded border ${
-                        t.tipe === 'Penerimaan' 
-                          ? 'bg-green-50 text-green-700 border-green-200/40' 
-                          : 'bg-red-50 text-red-700 border-red-200/30'
-                      }`}>
-                        {t.tipe === 'Penerimaan' ? 'Masuk' : 'Keluar'}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">{t.deskripsi}</p>
-                    <span className="text-[10px] text-stone-400 font-semibold block mt-1.5 flex items-center">
-                      <CalendarIcon className="w-3 h-3 mr-1" />
-                      {new Date(t.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+          {/* Saldo Per Kantong Persembahan */}
+          <div className="space-y-2.5">
+            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Saldo Per Kantong Persembahan</span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {kategoriKantong && kategoriKantong.map((kat) => {
+                const balance = bagBalances[String(kat.id)] || 0;
+                return (
+                  <div 
+                    key={kat.id} 
+                    className={`px-3.5 py-2.5 rounded-lg border border-transparent ${kat.warna_badge} flex flex-col justify-center space-y-0.5 shadow-none transition-all`}
+                  >
+                    <span className="text-[10px] font-bold uppercase tracking-wider truncate opacity-85">
+                      {kat.nama_kantong}
+                    </span>
+                    <span className="text-sm font-extrabold tracking-tight">
+                      {formatRupiah(balance)}
                     </span>
                   </div>
-                </div>
+                );
+              })}
+            </div>
+          </div>
 
-                {/* Right side: Amount & CRUD actions */}
-                <div className="sm:text-right flex items-center justify-between sm:justify-end gap-4">
-                  <span className={`text-xs font-bold whitespace-nowrap ${t.tipe === 'Penerimaan' ? 'text-green-700' : 'text-red-700'}`}>
-                    {t.tipe === 'Penerimaan' ? '+' : '-'} {formatRupiah(t.nominal)}
-                  </span>
-                  
-                  <div className="flex items-center space-x-1">
-                    <button
-                      onClick={() => handleOpenEditModal(t)}
-                      className="p-1 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors focus:outline-none"
-                      title="Edit Transaksi"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(t.id, t.kategori, t.nominal)}
-                      className="p-1 rounded text-stone-400 hover:text-red-650 hover:bg-red-50 transition-colors focus:outline-none"
-                      title="Hapus Transaksi"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+          {/* Transaction History Section */}
+          <div className="bg-white border border-stone-200/60 rounded-xl overflow-hidden shadow-xs">
+            <div className="px-5 py-3 border-b border-stone-100 bg-stone-50/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <h3 className="text-xs font-bold text-stone-850 uppercase tracking-wider">Riwayat Arus Kas Jemaat</h3>
+              <div className="flex items-center space-x-2">
+                <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider whitespace-nowrap">Filter Kantong:</label>
+                <select
+                  value={selectedFilterBag}
+                  onChange={(e) => setSelectedFilterBag(e.target.value)}
+                  className="px-2.5 py-1 border border-stone-200 rounded-lg text-xs font-semibold text-stone-700 bg-white focus:outline-none focus:border-stone-400"
+                >
+                  <option value="all">Semua Kantong</option>
+                  {kategoriKantong && kategoriKantong.map((kat) => (
+                    <option key={kat.id} value={kat.id}>
+                      {kat.nama_kantong}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="divide-y divide-stone-100">
+              {filteredAndSortedTransactions.length > 0 ? (
+                filteredAndSortedTransactions.map((t) => (
+                  <div key={t.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-stone-50/50 transition-colors">
+                    {/* Left side: Icon + Kategori + Description */}
+                    <div className="flex items-start space-x-3.5">
+                      <div className={`p-2 rounded-lg mt-0.5 ${
+                        t.tipe === 'Penerimaan' 
+                          ? 'bg-green-50 text-green-600 border border-green-200/40' 
+                          : 'bg-red-50/50 text-red-600 border border-red-200/30'
+                      }`}>
+                        {t.tipe === 'Penerimaan' ? <TrendingUp className="w-4.5 h-4.5" /> : <TrendingDown className="w-4.5 h-4.5" />}
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-bold text-stone-850">{t.kategori}</span>
+                          <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.25 rounded border ${
+                            t.tipe === 'Penerimaan' 
+                              ? 'bg-green-50 text-green-700 border-green-200/40' 
+                              : 'bg-red-50 text-red-700 border-red-200/30'
+                          }`}>
+                            {t.tipe === 'Penerimaan' ? 'Masuk' : 'Keluar'}
+                          </span>
+                          {t.tipe === 'Penerimaan' && (() => {
+                            const kantong = kategoriKantong?.find(k => String(k.id) === String(t.alokasi_kantong_id));
+                            return kantong ? (
+                              <span className={`text-[9px] font-bold px-1.5 py-0.25 rounded border uppercase tracking-wider ${kantong.warna_badge}`}>
+                                {kantong.nama_kantong}
+                              </span>
+                            ) : (
+                              t.alokasi_kantong_id ? (
+                                <span className="text-[9px] font-bold px-1.5 py-0.25 rounded border uppercase tracking-wider bg-stone-100 text-stone-800 border-stone-250">
+                                  Kategori Dihapus
+                                </span>
+                              ) : null
+                            );
+                          })()}
+                        </div>
+                        <p className="text-[11px] text-stone-500 mt-1 leading-relaxed">{t.deskripsi}</p>
+                        <span className="text-[10px] text-stone-400 font-semibold block mt-1.5 flex items-center">
+                          <CalendarIcon className="w-3 h-3 mr-1" />
+                          {new Date(t.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Right side: Amount & CRUD actions */}
+                    <div className="sm:text-right flex items-center justify-between sm:justify-end gap-4">
+                      <span className={`text-xs font-bold whitespace-nowrap ${t.tipe === 'Penerimaan' ? 'text-green-700' : 'text-red-700'}`}>
+                        {t.tipe === 'Penerimaan' ? '+' : '-'} {formatRupiah(t.nominal)}
+                      </span>
+                      
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => handleOpenEditModal(t)}
+                          className="p-1 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors focus:outline-none"
+                          title="Edit Transaksi"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(t.id, t.kategori, t.nominal)}
+                          className="p-1 rounded text-stone-400 hover:text-red-650 hover:bg-red-50 transition-colors focus:outline-none"
+                          title="Hapus Transaksi"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="p-10 text-center text-stone-400 text-xs">
+                  {selectedFilterBag !== 'all' 
+                    ? 'Tidak ada catatan transaksi pemasukan untuk kategori kantong ini.'
+                    : 'Belum ada riwayat pencatatan transaksi kas.'}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        /* Category CRUD content */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-200">
+          {/* Left Side: Form (Col-span-1) */}
+          <div className="bg-white border border-stone-200/60 p-5 rounded-xl shadow-xs space-y-4 h-fit">
+            <div>
+              <h3 className="text-xs font-bold text-stone-850 uppercase tracking-wider">
+                {isEditingKat ? 'Edit Kategori Kantong' : 'Tambah Kategori Kantong'}
+              </h3>
+              <p className="text-[10px] text-stone-400 mt-1">
+                {isEditingKat ? 'Ubah informasi kategori kantong persembahan' : 'Buat master data kantong persembahan baru'}
+              </p>
+            </div>
+            
+            <form onSubmit={handleKatSubmit} className="space-y-4">
+              {/* Nama Kantong */}
+              <div className="space-y-1">
+                <label className="text-[10.5px] font-bold text-stone-500 uppercase tracking-wider block">Nama Kantong *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Kantong Merah"
+                  value={katForm.nama_kantong}
+                  onChange={(e) => setKatForm({ ...katForm, nama_kantong: e.target.value })}
+                  className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-stone-50/50 focus:bg-white"
+                />
+              </div>
+
+              {/* Deskripsi Alokasi */}
+              <div className="space-y-1">
+                <label className="text-[10.5px] font-bold text-stone-500 uppercase tracking-wider block">Deskripsi Alokasi *</label>
+                <textarea
+                  required
+                  rows="2"
+                  placeholder="Contoh: Untuk Diakonia & Pelayanan Sosial"
+                  value={katForm.deskripsi_alokasi}
+                  onChange={(e) => setKatForm({ ...katForm, deskripsi_alokasi: e.target.value })}
+                  className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-stone-50/50 focus:bg-white resize-none"
+                />
+              </div>
+
+              {/* Warna Badge (Preset Selector) */}
+              <div className="space-y-1.5">
+                <label className="text-[10.5px] font-bold text-stone-500 uppercase tracking-wider block">Warna Label Badge *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {BadgeColors.map((color) => (
+                    <button
+                      key={color.name}
+                      type="button"
+                      onClick={() => setKatForm({ ...katForm, warna_badge: color.class })}
+                      className={`px-2 py-1.5 rounded-lg border text-[10px] font-semibold text-center transition-all ${
+                        katForm.warna_badge === color.class
+                          ? 'border-stone-800 ring-2 ring-stone-900/10'
+                          : 'border-stone-200 hover:border-stone-400'
+                      } ${color.class}`}
+                    >
+                      {color.name}
+                    </button>
+                  ))}
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="p-10 text-center text-stone-400 text-xs">
-              Belum ada riwayat pencatatan transaksi kas.
+
+              {/* Buttons */}
+              <div className="flex gap-2.5 pt-3 border-t border-stone-100">
+                {isEditingKat && (
+                  <button
+                    type="button"
+                    onClick={handleCancelKatEdit}
+                    className="flex-1 py-1.5 border border-stone-250 hover:bg-stone-50 rounded-lg text-xs font-semibold text-stone-600 transition-colors focus:outline-none"
+                  >
+                    Batal
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold text-white shadow-xs ${accentClasses.bgPrimary} transition-colors focus:outline-none`}
+                >
+                  {isEditingKat ? 'Simpan' : 'Tambah'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Right Side: Table (Col-span-2) */}
+          <div className="bg-white border border-stone-200/60 rounded-xl overflow-hidden shadow-xs lg:col-span-2 flex flex-col justify-between h-fit">
+            <div>
+              <div className="px-5 py-4 border-b border-stone-100 bg-stone-50/20">
+                <h3 className="text-xs font-bold text-stone-850 uppercase tracking-wider">Daftar Kategori Kantong</h3>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-stone-50/40 text-stone-450 border-b border-stone-150 uppercase tracking-wider text-[9px] font-bold">
+                      <th className="py-2.5 px-4">Nama Kantong</th>
+                      <th className="py-2.5 px-4">Deskripsi Alokasi</th>
+                      <th className="py-2.5 px-4">Warna Label</th>
+                      <th className="py-2.5 px-4 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {kategoriKantong && kategoriKantong.length > 0 ? (
+                      kategoriKantong.map((item) => (
+                        <tr key={item.id} className="hover:bg-stone-50/35 transition-colors">
+                          <td className="py-3 px-4 font-bold text-stone-800">{item.nama_kantong}</td>
+                          <td className="py-3 px-4 text-stone-500">{item.deskripsi_alokasi}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded border text-[10px] font-semibold ${item.warna_badge}`}>
+                              {item.nama_kantong}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="inline-flex items-center space-x-1">
+                              <button
+                                onClick={() => handleStartKatEdit(item)}
+                                className="p-1 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors focus:outline-none"
+                                title="Edit Kategori"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleKatDelete(item.id, item.nama_kantong)}
+                                className="p-1 rounded text-stone-400 hover:text-red-650 hover:bg-red-50 transition-colors focus:outline-none"
+                                title="Hapus Kategori"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="py-8 text-center text-stone-400 text-xs">
+                          Belum ada kategori kantong.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* RECORD / EDIT TRANSACTION MODAL */}
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={isEditMode ? "Ubah Catatan Transaksi Keuangan" : "Catat Transaksi Keuangan Baru"}>
@@ -247,7 +610,8 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
                 onChange={(e) => {
                   const newTipe = e.target.value;
                   const newKat = newTipe === 'Penerimaan' ? 'Persembahan Mingguan' : 'Operasional Gedung';
-                  setFormData({ ...formData, tipe: newTipe, kategori: newKat });
+                  const defaultKatId = kategoriKantong && kategoriKantong.length > 0 ? String(kategoriKantong[0].id) : '';
+                  setFormData({ ...formData, tipe: newTipe, kategori: newKat, alokasi_kantong_id: defaultKatId });
                 }}
                 className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-white"
               >
@@ -284,6 +648,31 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
                 </select>
               )}
             </div>
+
+            {/* Alokasi Kantong (hanya untuk Penerimaan) */}
+            {formData.tipe === 'Penerimaan' && (
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-[10.5px] font-bold text-stone-500 uppercase tracking-wider block">Alokasi Kantong *</label>
+                {kategoriKantong && kategoriKantong.length > 0 ? (
+                  <select
+                    value={formData.alokasi_kantong_id}
+                    onChange={(e) => setFormData({ ...formData, alokasi_kantong_id: e.target.value })}
+                    className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-white"
+                    required
+                  >
+                    {kategoriKantong.map((kat) => (
+                      <option key={kat.id} value={kat.id}>
+                        {kat.nama_kantong} ({kat.deskripsi_alokasi})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="text-[11px] text-red-500 bg-red-50 border border-red-200/50 p-2 rounded-lg leading-relaxed">
+                    Belum ada kategori kantong. Silakan buat di tab Pengaturan Kategori Kantong terlebih dahulu.
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Nominal */}
             <div className="space-y-1">

@@ -325,6 +325,27 @@ export const initialPelayanan = [
   }
 ];
 
+export const initialKategoriKantong = [
+  {
+    id: 1,
+    nama_kantong: "Kantong Merah",
+    deskripsi_alokasi: "Untuk Diakonia & Pelayanan Sosial",
+    warna_badge: "bg-red-100 text-red-800 border-red-200"
+  },
+  {
+    id: 2,
+    nama_kantong: "Kantong Kuning",
+    deskripsi_alokasi: "Untuk Operasional & Pembangunan Gedung",
+    warna_badge: "bg-amber-100 text-amber-800 border-amber-250"
+  },
+  {
+    id: 3,
+    nama_kantong: "Kantong Biru",
+    deskripsi_alokasi: "Untuk Kesejahteraan Hamba Tuhan & Misi",
+    warna_badge: "bg-blue-100 text-blue-800 border-blue-200"
+  }
+];
+
 export const initialKeuangan = {
   saldo: 56050000,
   transaksi: [
@@ -334,7 +355,8 @@ export const initialKeuangan = {
       tipe: "Penerimaan", // Penerimaan / Pengeluaran
       kategori: "Persembahan Mingguan",
       nominal: 12500000,
-      deskripsi: "Persembahan kotak ibadah raya hari Minggu 4 Juni"
+      deskripsi: "Persembahan kotak ibadah raya hari Minggu 4 Juni",
+      alokasi_kantong_id: 1
     },
     {
       id: 2,
@@ -358,7 +380,8 @@ export const initialKeuangan = {
       tipe: "Penerimaan",
       kategori: "Persepuluhan",
       nominal: 45000000,
-      deskripsi: "Transfer persepuluhan dari beberapa jemaat"
+      deskripsi: "Transfer persepuluhan dari beberapa jemaat",
+      alokasi_kantong_id: 2
     },
     {
       id: 5,
@@ -370,6 +393,7 @@ export const initialKeuangan = {
     }
   ]
 };
+
 
 export const initialEvents = [
   {
