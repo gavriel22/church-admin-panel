@@ -52,9 +52,14 @@ export default function DataJemaat({
   // Calculate age from birthdate
   const getAge = (birthDateString) => {
     if (!birthDateString) return 0;
-    const birthYear = new Date(birthDateString).getFullYear();
-    const currentYear = 2026; // System year relative to current time
-    return currentYear - birthYear;
+    const today = new Date();
+    const birthDate = new Date(birthDateString);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
   };
 
   // Classify age category dynamically based on context settings
@@ -324,8 +329,8 @@ export default function DataJemaat({
                 <th className="px-6 py-3.5">Peran Pelayanan</th>
                 <th className="px-6 py-3.5">Kelompok Sel</th>
                 <th className="px-6 py-3.5">Kontak</th>
-                <th className="px-6 py-3.5">Usia / JK / Goldar</th>
-                <th className="px-6 py-3.5">Kategori Usia</th>
+                <th className="px-6 py-3.5">JK / Goldar</th>
+                <th className="px-6 py-3.5">Usia</th>
                 <th className="px-6 py-3.5">Status</th>
                 <th className="px-6 py-3.5 text-right">Aksi</th>
               </tr>
@@ -369,18 +374,18 @@ export default function DataJemaat({
                         )}
                       </td>
 
-                      {/* Age / Gender / Blood */}
+                      {/* JK / Goldar */}
                       <td className="px-6 py-4">
                         <div>
-                          <span className="font-semibold text-stone-700">{age} Thn ({member.jenis_kelamin === 'Laki-laki' ? 'P' : 'W'})</span>
+                          <span className="font-semibold text-stone-700">{member.jenis_kelamin}</span>
                           <span className="block text-[10px] text-stone-400 font-semibold mt-0.5 font-sans">Goldar: {member.golongan_darah}</span>
                         </div>
                       </td>
 
-                      {/* Kategori Usia */}
+                      {/* Usia (Dynamic with Category) */}
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-stone-50 text-stone-700 border border-stone-200/40 uppercase tracking-wider">
-                          {getAgeCategory(member.tanggal_lahir)}
+                        <span className="font-semibold text-stone-700">
+                          {age} Tahun ({getAgeCategory(member.tanggal_lahir)})
                         </span>
                       </td>
 

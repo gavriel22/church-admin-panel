@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { 
   Users, 
   HeartHandshake, 
   Wallet, 
   Plus, 
   Megaphone, 
-  Calendar 
+  Calendar,
+  UserCheck,
+  Home
 } from 'lucide-react';
 
 export default function DashboardTab({ 
@@ -15,11 +18,36 @@ export default function DashboardTab({
   onQuickAction, 
   accentClasses 
 }) {
+  // Birthday Filter State and Helpers
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth());
+  const namaBulan = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  
+  const birthdayJemaat = jemaat.filter(item => {
+    if (!item.tanggal_lahir) return false;
+    const birthDate = new Date(item.tanggal_lahir);
+    return birthDate.getMonth() === selectedMonth;
+  });
+
+  const getAgeToReach = (birthDateString) => {
+    if (!birthDateString) return 0;
+    const birthYear = new Date(birthDateString).getFullYear();
+    const currentYear = new Date().getFullYear();
+    return currentYear - birthYear;
+  };
+
   // Calculate demographics
   const totalJemaat = jemaat.length;
   const totalPria = jemaat.filter(j => j.jenis_kelamin === 'Laki-laki').length;
   const totalWanita = jemaat.filter(j => j.jenis_kelamin === 'Perempuan').length;
   
+  const totalJemaatAktif = jemaat.filter(item => item.status === 'Aktif').length;
+  const totalKK = new Set(jemaat.filter(item => item.no_kk && item.no_kk !== '-').map(item => item.no_kk)).size;
+  const totalLakiLaki = jemaat.filter(item => item.jenis_kelamin === 'Laki-laki' && item.status === 'Aktif').length;
+  const totalPerempuan = jemaat.filter(item => item.jenis_kelamin === 'Perempuan' && item.status === 'Aktif').length;
+
   const pctPria = totalJemaat > 0 ? Math.round((totalPria / totalJemaat) * 100) : 0;
   const pctWanita = totalJemaat > 0 ? Math.round((totalWanita / totalJemaat) * 100) : 0;
 
@@ -75,6 +103,58 @@ export default function DashboardTab({
           </p>
         </div>
       </div>
+
+      {/* Barisan Card Ringkasan Statistik */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Total Jemaat Aktif */}
+        <div className="bg-white border border-stone-200/60 p-5 rounded-xl flex items-center justify-between shadow-xs">
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Jemaat Aktif</span>
+            <p className="text-2xl font-bold text-stone-900">{totalJemaatAktif} Jiwa</p>
+            <span className="text-[11px] text-stone-400 block font-light">Status terdaftar aktif</span>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <UserCheck className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Jumlah Kartu Keluarga */}
+        <div className="bg-white border border-stone-200/60 p-5 rounded-xl flex items-center justify-between shadow-xs">
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Kartu Keluarga</span>
+            <p className="text-2xl font-bold text-stone-900">{totalKK} KK</p>
+            <span className="text-[11px] text-stone-400 block font-light">KK terdaftar unik</span>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Home className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Total Laki-laki */}
+        <div className="bg-white border border-stone-200/60 p-5 rounded-xl flex items-center justify-between shadow-xs">
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Jemaat Pria</span>
+            <p className="text-2xl font-bold text-stone-900">{totalLakiLaki} Jiwa</p>
+            <span className="text-[11px] text-stone-400 block font-light">Laki-laki aktif</span>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+            <Users className="w-6 h-6 text-sky-600" />
+          </div>
+        </div>
+
+        {/* Total Perempuan */}
+        <div className="bg-white border border-stone-200/60 p-5 rounded-xl flex items-center justify-between shadow-xs">
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Jemaat Wanita</span>
+            <p className="text-2xl font-bold text-stone-900">{totalPerempuan} Jiwa</p>
+            <span className="text-[11px] text-stone-400 block font-light">Perempuan aktif</span>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-pink-50 text-pink-650 flex items-center justify-center">
+            <Users className="w-6 h-6 text-pink-500" />
+          </div>
+        </div>
+      </div>
+
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -268,6 +348,59 @@ export default function DashboardTab({
               Diperbarui otomatis berdasarkan database registrasi jemaat
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Widget Ulang Tahun Bulanan */}
+      <div className="bg-white border border-stone-200/60 p-5 rounded-xl flex flex-col shadow-xs">
+        <div className="flex items-center justify-between mb-4 border-b border-stone-100 pb-2.5">
+          <div className="flex items-center space-x-3">
+            <h3 className="text-sm font-semibold text-stone-850 tracking-tight">Daftar Ulang Tahun Jemaat</h3>
+            <div className="flex items-center space-x-1.5 bg-stone-50 px-2 py-0.5 rounded border border-stone-200/60">
+              <span className="text-[10px] text-stone-400 font-bold uppercase">Bulan:</span>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="py-0.5 px-1 border-transparent rounded text-[11px] bg-transparent text-stone-700 font-semibold focus:outline-none focus:ring-0 cursor-pointer"
+              >
+                {namaBulan.map((name, index) => (
+                  <option key={index} value={index}>{name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <span className="text-[10.5px] font-bold text-stone-400 uppercase tracking-wide bg-stone-50 px-2 py-0.5 rounded border border-stone-200/40">
+            {birthdayJemaat.length} Jemaat
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {birthdayJemaat.length > 0 ? (
+            birthdayJemaat.map((item) => {
+              const age = getAgeToReach(item.tanggal_lahir);
+              const formattedBirth = new Date(item.tanggal_lahir).toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long'
+              });
+              return (
+                <div key={item.id} className="p-3 border border-stone-100 rounded-lg bg-stone-50/40 flex items-center justify-between hover:border-stone-250 transition-colors">
+                  <div>
+                    <h4 className="text-xs font-bold text-stone-850">{item.nama}</h4>
+                    <p className="text-[10px] text-stone-400 font-medium mt-0.5">{formattedBirth}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/40 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                      Akan {age} Thn
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="col-span-full py-8 text-center bg-stone-50/20 rounded-lg border border-dashed border-stone-200/50">
+              <p className="text-xs text-stone-400 italic">Tidak ada jemaat yang berulang tahun di bulan ini.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -347,12 +347,12 @@ export const initialKategoriKantong = [
 ];
 
 export const initialKeuangan = {
-  saldo: 56050000,
+  saldo: 54050000,
   transaksi: [
     {
       id: 1,
       tanggal: "2026-06-04",
-      tipe: "Penerimaan", // Penerimaan / Pengeluaran
+      tipe_transaksi: "Pemasukan",
       kategori: "Persembahan Mingguan",
       nominal: 12500000,
       deskripsi: "Persembahan kotak ibadah raya hari Minggu 4 Juni",
@@ -361,23 +361,25 @@ export const initialKeuangan = {
     {
       id: 2,
       tanggal: "2026-06-03",
-      tipe: "Pengeluaran",
+      tipe_transaksi: "Pengeluaran",
       kategori: "Operasional Gedung",
       nominal: 1450000,
-      deskripsi: "Pembayaran tagihan listrik pascabayar & air PDAM gereja"
+      deskripsi: "Pembayaran tagihan listrik pascabayar & air PDAM gereja",
+      alokasi_kantong_id: 2
     },
     {
       id: 3,
       tanggal: "2026-06-02",
-      tipe: "Pengeluaran",
+      tipe_transaksi: "Pengeluaran",
       kategori: "Diakonia",
       nominal: 1000000,
-      deskripsi: "Santunan duka cita untuk keluarga Alm. Bapak J. Sitorus"
+      deskripsi: "Santunan duka cita untuk keluarga Alm. Bapak J. Sitorus",
+      alokasi_kantong_id: 1
     },
     {
       id: 4,
       tanggal: "2026-06-01",
-      tipe: "Penerimaan",
+      tipe_transaksi: "Pemasukan",
       kategori: "Persepuluhan",
       nominal: 45000000,
       deskripsi: "Transfer persepuluhan dari beberapa jemaat",
@@ -386,10 +388,11 @@ export const initialKeuangan = {
     {
       id: 5,
       tanggal: "2026-05-28",
-      tipe: "Pengeluaran",
+      tipe_transaksi: "Pengeluaran",
       kategori: "Sekretariat",
       nominal: 1000000,
-      deskripsi: "Pembelian kertas A4, tinta printer, dan warta jemaat"
+      deskripsi: "Pembelian kertas A4, tinta printer, dan warta jemaat",
+      alokasi_kantong_id: 2
     }
   ]
 };

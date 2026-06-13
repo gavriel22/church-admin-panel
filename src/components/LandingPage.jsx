@@ -193,27 +193,6 @@ export default function LandingPage({
         </div>
       </section>
  
-      {/* 3. Statistik Ringkas */}
-      <section className="bg-white border-y border-stone-100 py-8 px-6">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center divide-y md:divide-y-0 md:divide-x divide-stone-150">
-          <div className="p-3">
-            <p className="text-2xl sm:text-3xl font-semibold text-stone-900 tracking-tight">{totalJemaatAktif}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mt-1">Total Jemaat Aktif</p>
-          </div>
-          <div className="p-3 pt-6 md:pt-3">
-            <p className="text-2xl sm:text-3xl font-semibold text-stone-900 tracking-tight">{totalKK}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mt-1">Jumlah Kartu Keluarga</p>
-          </div>
-          <div className="p-3 pt-6 md:pt-3">
-            <p className="text-2xl sm:text-3xl font-semibold text-stone-900 tracking-tight">{totalLakiLaki}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mt-1">Total Laki-laki</p>
-          </div>
-          <div className="p-3 pt-6 md:pt-3">
-            <p className="text-2xl sm:text-3xl font-semibold text-stone-900 tracking-tight">{totalPerempuan}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mt-1">Total Perempuan</p>
-          </div>
-        </div>
-      </section>
 
       {/* 4. Tentang Kami */}
       <section id="tentang" className="max-w-5xl mx-auto px-6 py-12 sm:py-16 space-y-12">

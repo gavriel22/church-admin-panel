@@ -6,6 +6,7 @@ import Modal from './Modal';
 export default function JadwalTab({ accentClasses, externalOpenJadwalModal, setExternalOpenJadwalModal }) {
   const { 
     jadwal, 
+    jemaat,
     addJadwal, 
     updateJadwal, 
     deleteJadwal 
@@ -20,7 +21,8 @@ export default function JadwalTab({ accentClasses, externalOpenJadwalModal, setE
     hari: 'Minggu',
     waktu: '',
     lokasi: '',
-    deskripsi: ''
+    deskripsi: '',
+    petugas: []
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -49,7 +51,8 @@ export default function JadwalTab({ accentClasses, externalOpenJadwalModal, setE
       hari: item.hari || 'Minggu',
       waktu: item.waktu || '',
       lokasi: item.lokasi || '',
-      deskripsi: item.deskripsi || ''
+      deskripsi: item.deskripsi || '',
+      petugas: item.petugas || []
     });
     setIsModalOpen(true);
   };
@@ -124,7 +127,24 @@ export default function JadwalTab({ accentClasses, externalOpenJadwalModal, setE
               {jadwal.length > 0 ? (
                 jadwal.map((item) => (
                   <tr key={item.id} className="hover:bg-stone-50/40 transition-colors">
-                    <td className="px-6 py-4 font-bold text-stone-900">{item.nama}</td>
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-stone-900">{item.nama}</div>
+                      {item.petugas && item.petugas.length > 0 && (
+                        <div className="mt-1.5 space-y-1 animate-in fade-in duration-200">
+                          <p className="text-[9px] font-extrabold text-stone-400 uppercase tracking-wider">Petugas:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {item.petugas.map((p, idx) => {
+                              const person = jemaat.find(j => String(j.id) === String(p.jemaat_id));
+                              return (
+                                <span key={idx} className="inline-flex items-center px-1.5 py-0.5 rounded bg-stone-50 text-stone-700 border border-stone-200 text-[10px] font-semibold">
+                                  <strong className="text-stone-500 mr-1">{p.jabatan}:</strong> {person ? person.nama : 'Tidak Diketahui'}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${accentClasses.badge}`}>
                         {item.hari}
@@ -247,6 +267,82 @@ export default function JadwalTab({ accentClasses, externalOpenJadwalModal, setE
                 onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
                 className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-stone-50/50 focus:bg-white resize-none"
               />
+            </div>
+
+            {/* Petugas Ibadah (Internal Admin) */}
+            <div className="space-y-2.5 md:col-span-2 border-t border-stone-150 pt-3">
+              <div className="flex items-center justify-between">
+                <label className="text-[10.5px] font-bold text-stone-500 uppercase tracking-wider block">Petugas Ibadah (Internal Admin)</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const defaultJemaatId = jemaat && jemaat.length > 0 ? String(jemaat[0].id) : '';
+                    setFormData(prev => ({
+                      ...prev,
+                      petugas: [...(prev.petugas || []), { id: Date.now(), jabatan: '', jemaat_id: defaultJemaatId }]
+                    }));
+                  }}
+                  className={`text-[11px] font-bold ${accentClasses.text} hover:opacity-80 transition-opacity flex items-center focus:outline-none`}
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Tambah Kategori Petugas
+                </button>
+              </div>
+
+              {formData.petugas && formData.petugas.length > 0 ? (
+                <div className="space-y-2">
+                  {formData.petugas.map((officer, index) => (
+                    <div key={officer.id || index} className="flex items-center gap-3 bg-stone-50 p-2 rounded-lg border border-stone-200/60">
+                      {/* Nama Tugas / Jabatan */}
+                      <input
+                        type="text"
+                        required
+                        placeholder="Nama tugas (cth: Penyambut Jemaat)"
+                        value={officer.jabatan}
+                        onChange={(e) => {
+                          const updated = [...formData.petugas];
+                          updated[index].jabatan = e.target.value;
+                          setFormData({ ...formData, petugas: updated });
+                        }}
+                        className="flex-1 min-w-0 px-2.5 py-1 border border-stone-200 rounded-md text-xs focus:outline-none focus:border-stone-450 bg-white"
+                      />
+
+                      {/* Dropdown Jemaat */}
+                      <select
+                        value={officer.jemaat_id}
+                        onChange={(e) => {
+                          const updated = [...formData.petugas];
+                          updated[index].jemaat_id = e.target.value;
+                          setFormData({ ...formData, petugas: updated });
+                        }}
+                        className="flex-1 min-w-0 px-2 py-1 border border-stone-200 rounded-md text-xs focus:outline-none focus:border-stone-450 bg-white"
+                        required
+                      >
+                        <option value="">Pilih Jemaat</option>
+                        {jemaat && jemaat.map(j => (
+                          <option key={j.id} value={j.id}>
+                            {j.nama} ({j.peran})
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Button Remove */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = formData.petugas.filter((_, i) => i !== index);
+                          setFormData({ ...formData, petugas: updated });
+                        }}
+                        className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors focus:outline-none"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-stone-400 italic">Belum ada petugas ibadah ditambahkan.</p>
+              )}
             </div>
           </div>
 

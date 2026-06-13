@@ -154,7 +154,7 @@ export function ChurchProvider({ children }) {
   // 6. Keuangan
   const addTransaksi = (item) => {
     setKeuangan(prev => {
-      const updatedBalance = item.tipe === 'Penerimaan'
+      const updatedBalance = item.tipe_transaksi === 'Pemasukan'
         ? prev.saldo + item.nominal
         : prev.saldo - item.nominal;
       return {
@@ -171,14 +171,14 @@ export function ChurchProvider({ children }) {
       
       // Revert original transaction balance effect
       let tempBalance = prev.saldo;
-      if (orig.tipe === 'Penerimaan') {
+      if (orig.tipe_transaksi === 'Pemasukan') {
         tempBalance -= orig.nominal;
       } else {
         tempBalance += orig.nominal;
       }
 
       // Apply updated transaction balance effect
-      if (updated.tipe === 'Penerimaan') {
+      if (updated.tipe_transaksi === 'Pemasukan') {
         tempBalance += updated.nominal;
       } else {
         tempBalance -= updated.nominal;
@@ -197,7 +197,7 @@ export function ChurchProvider({ children }) {
 
       // Revert original transaction balance effect
       let tempBalance = prev.saldo;
-      if (orig.tipe === 'Penerimaan') {
+      if (orig.tipe_transaksi === 'Pemasukan') {
         tempBalance -= orig.nominal;
       } else {
         tempBalance += orig.nominal;

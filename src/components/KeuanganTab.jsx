@@ -40,9 +40,15 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
     }
     if (keuangan && keuangan.transaksi) {
       keuangan.transaksi.forEach(t => {
-        if (t.tipe === 'Penerimaan' && t.alokasi_kantong_id) {
+        if (t.alokasi_kantong_id) {
           const key = String(t.alokasi_kantong_id);
-          balances[key] = (balances[key] || 0) + t.nominal;
+          const nominal = Number(t.nominal);
+          const isPemasukan = t.tipe_transaksi === 'Pemasukan';
+          if (isPemasukan) {
+            balances[key] = (balances[key] || 0) + nominal;
+          } else {
+            balances[key] = (balances[key] || 0) - nominal;
+          }
         }
       });
     }
@@ -54,9 +60,9 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
     if (!keuangan || !keuangan.transaksi) return [];
     let list = [...keuangan.transaksi];
 
-    // Filter by selected kantong category (only Penerimaan is associated with bags)
+    // Filter by selected kantong category (both Pemasukan & Pengeluaran are associated with bags)
     if (selectedFilterBag && selectedFilterBag !== 'all') {
-      list = list.filter(t => t.tipe === 'Penerimaan' && String(t.alokasi_kantong_id) === String(selectedFilterBag));
+      list = list.filter(t => String(t.alokasi_kantong_id) === String(selectedFilterBag));
     }
 
     // Sort by date descending (newest first), and by ID descending if dates are equal
@@ -77,7 +83,7 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
   const [selectedId, setSelectedId] = useState(null);
 
   const getInitialFormState = () => ({
-    tipe: 'Penerimaan',
+    tipe_transaksi: 'Pemasukan',
     kategori: 'Persembahan Mingguan',
     nominal: '',
     tanggal: '',
@@ -107,7 +113,7 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
     setIsEditMode(true);
     setSelectedId(item.id);
     setFormData({
-      tipe: item.tipe || 'Penerimaan',
+      tipe_transaksi: item.tipe_transaksi || 'Pemasukan',
       kategori: item.kategori || 'Persembahan Mingguan',
       nominal: item.nominal || '',
       tanggal: item.tanggal || '',
@@ -192,11 +198,11 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
 
   // Calculate totals
   const totalPemasukan = keuangan.transaksi
-    .filter(t => t.tipe === 'Penerimaan')
+    .filter(t => t.tipe_transaksi === 'Pemasukan')
     .reduce((acc, curr) => acc + curr.nominal, 0);
 
   const totalPengeluaran = keuangan.transaksi
-    .filter(t => t.tipe === 'Pengeluaran')
+    .filter(t => t.tipe_transaksi === 'Pengeluaran')
     .reduce((acc, curr) => acc + curr.nominal, 0);
 
   const currentBalance = keuangan.saldo;
@@ -218,25 +224,23 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
       return;
     }
 
-    if (formData.tipe === 'Penerimaan') {
-      if (!kategoriKantong || kategoriKantong.length === 0) {
-        alert('Mohon buat minimal satu Kategori Kantong terlebih dahulu di Tab Pengaturan Kategori Kantong.');
-        return;
-      }
-      if (!formData.alokasi_kantong_id) {
-        alert('Mohon pilih alokasi kantong persembahan.');
-        return;
-      }
+    if (!kategoriKantong || kategoriKantong.length === 0) {
+      alert('Mohon buat minimal satu Kategori Kantong terlebih dahulu di Tab Pengaturan Kategori Kantong.');
+      return;
+    }
+    if (!formData.alokasi_kantong_id) {
+      alert('Mohon pilih alokasi kantong.');
+      return;
     }
 
     const transactionData = {
       id: isEditMode ? selectedId : Date.now(),
       tanggal: formData.tanggal,
-      tipe: formData.tipe,
+      tipe_transaksi: formData.tipe_transaksi,
       kategori: formData.kategori,
       nominal: Number(formData.nominal),
       deskripsi: formData.deskripsi,
-      alokasi_kantong_id: formData.tipe === 'Penerimaan' ? Number(formData.alokasi_kantong_id) : undefined
+      alokasi_kantong_id: Number(formData.alokasi_kantong_id)
     };
 
     if (isEditMode) {
@@ -378,34 +382,32 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
                     {/* Left side: Icon + Kategori + Description */}
                     <div className="flex items-start space-x-3.5">
                       <div className={`p-2 rounded-lg mt-0.5 ${
-                        t.tipe === 'Penerimaan' 
+                        t.tipe_transaksi === 'Pemasukan' 
                           ? 'bg-green-50 text-green-600 border border-green-200/40' 
                           : 'bg-red-50/50 text-red-600 border border-red-200/30'
                       }`}>
-                        {t.tipe === 'Penerimaan' ? <TrendingUp className="w-4.5 h-4.5" /> : <TrendingDown className="w-4.5 h-4.5" />}
+                        {t.tipe_transaksi === 'Pemasukan' ? <TrendingUp className="w-4.5 h-4.5" /> : <TrendingDown className="w-4.5 h-4.5" />}
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-bold text-stone-850">{t.kategori}</span>
                           <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.25 rounded border ${
-                            t.tipe === 'Penerimaan' 
+                            t.tipe_transaksi === 'Pemasukan' 
                               ? 'bg-green-50 text-green-700 border-green-200/40' 
                               : 'bg-red-50 text-red-700 border-red-200/30'
                           }`}>
-                            {t.tipe === 'Penerimaan' ? 'Masuk' : 'Keluar'}
+                            {t.tipe_transaksi === 'Pemasukan' ? 'Masuk' : 'Keluar'}
                           </span>
-                          {t.tipe === 'Penerimaan' && (() => {
+                          {t.alokasi_kantong_id && (() => {
                             const kantong = kategoriKantong?.find(k => String(k.id) === String(t.alokasi_kantong_id));
                             return kantong ? (
                               <span className={`text-[9px] font-bold px-1.5 py-0.25 rounded border uppercase tracking-wider ${kantong.warna_badge}`}>
                                 {kantong.nama_kantong}
                               </span>
                             ) : (
-                              t.alokasi_kantong_id ? (
-                                <span className="text-[9px] font-bold px-1.5 py-0.25 rounded border uppercase tracking-wider bg-stone-100 text-stone-800 border-stone-250">
-                                  Kategori Dihapus
-                                </span>
-                              ) : null
+                              <span className="text-[9px] font-bold px-1.5 py-0.25 rounded border uppercase tracking-wider bg-stone-100 text-stone-800 border-stone-250">
+                                Kategori Dihapus
+                              </span>
                             );
                           })()}
                         </div>
@@ -419,8 +421,8 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
 
                     {/* Right side: Amount & CRUD actions */}
                     <div className="sm:text-right flex items-center justify-between sm:justify-end gap-4">
-                      <span className={`text-xs font-bold whitespace-nowrap ${t.tipe === 'Penerimaan' ? 'text-green-700' : 'text-red-700'}`}>
-                        {t.tipe === 'Penerimaan' ? '+' : '-'} {formatRupiah(t.nominal)}
+                      <span className={`text-xs font-bold whitespace-nowrap ${t.tipe_transaksi === 'Pemasukan' ? 'text-green-700' : 'text-red-700'}`}>
+                        {t.tipe_transaksi === 'Pemasukan' ? '+' : '-'} {formatRupiah(t.nominal)}
                       </span>
                       
                       <div className="flex items-center space-x-1">
@@ -606,16 +608,16 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
             <div className="space-y-1">
               <label className="text-[10.5px] font-bold text-stone-500 uppercase tracking-wider block">Tipe Arus Kas *</label>
               <select
-                value={formData.tipe}
+                value={formData.tipe_transaksi}
                 onChange={(e) => {
                   const newTipe = e.target.value;
-                  const newKat = newTipe === 'Penerimaan' ? 'Persembahan Mingguan' : 'Operasional Gedung';
+                  const newKat = newTipe === 'Pemasukan' ? 'Persembahan Mingguan' : 'Operasional Gedung';
                   const defaultKatId = kategoriKantong && kategoriKantong.length > 0 ? String(kategoriKantong[0].id) : '';
-                  setFormData({ ...formData, tipe: newTipe, kategori: newKat, alokasi_kantong_id: defaultKatId });
+                  setFormData({ ...formData, tipe_transaksi: newTipe, kategori: newKat, alokasi_kantong_id: defaultKatId });
                 }}
                 className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-white"
               >
-                <option value="Penerimaan">Penerimaan / Uang Masuk</option>
+                <option value="Pemasukan">Pemasukan / Uang Masuk</option>
                 <option value="Pengeluaran">Pengeluaran / Uang Keluar</option>
               </select>
             </div>
@@ -623,7 +625,7 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
             {/* Kategori */}
             <div className="space-y-1">
               <label className="text-[10.5px] font-bold text-stone-500 uppercase tracking-wider block">Kategori Transaksi *</label>
-              {formData.tipe === 'Penerimaan' ? (
+              {formData.tipe_transaksi === 'Pemasukan' ? (
                 <select
                   value={formData.kategori}
                   onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
@@ -649,30 +651,28 @@ export default function KeuanganTab({ accentClasses, externalOpenAddModal, setEx
               )}
             </div>
 
-            {/* Alokasi Kantong (hanya untuk Penerimaan) */}
-            {formData.tipe === 'Penerimaan' && (
-              <div className="space-y-1 md:col-span-2">
-                <label className="text-[10.5px] font-bold text-stone-500 uppercase tracking-wider block">Alokasi Kantong *</label>
-                {kategoriKantong && kategoriKantong.length > 0 ? (
-                  <select
-                    value={formData.alokasi_kantong_id}
-                    onChange={(e) => setFormData({ ...formData, alokasi_kantong_id: e.target.value })}
-                    className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-white"
-                    required
-                  >
-                    {kategoriKantong.map((kat) => (
-                      <option key={kat.id} value={kat.id}>
-                        {kat.nama_kantong} ({kat.deskripsi_alokasi})
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-[11px] text-red-500 bg-red-50 border border-red-200/50 p-2 rounded-lg leading-relaxed">
-                    Belum ada kategori kantong. Silakan buat di tab Pengaturan Kategori Kantong terlebih dahulu.
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Alokasi Kantong */}
+            <div className="space-y-1 md:col-span-2">
+              <label className="text-[10.5px] font-bold text-stone-500 uppercase tracking-wider block">Alokasi Kantong *</label>
+              {kategoriKantong && kategoriKantong.length > 0 ? (
+                <select
+                  value={formData.alokasi_kantong_id}
+                  onChange={(e) => setFormData({ ...formData, alokasi_kantong_id: e.target.value })}
+                  className="w-full px-3 py-1.5 border border-stone-200 rounded-lg text-xs focus:outline-none focus:border-stone-450 bg-white"
+                  required
+                >
+                  {kategoriKantong.map((kat) => (
+                    <option key={kat.id} value={kat.id}>
+                      {kat.nama_kantong} ({kat.deskripsi_alokasi})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="text-[11px] text-red-500 bg-red-50 border border-red-200/50 p-2 rounded-lg leading-relaxed">
+                  Belum ada kategori kantong. Silakan buat di tab Pengaturan Kategori Kantong terlebih dahulu.
+                </div>
+              )}
+            </div>
 
             {/* Nominal */}
             <div className="space-y-1">
