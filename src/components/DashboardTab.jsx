@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   Users, 
   HeartHandshake, 
@@ -15,6 +15,7 @@ export default function DashboardTab({
   pelayanan, 
   keuangan, 
   jadwal,
+  events = [],
   onQuickAction, 
   accentClasses 
 }) {
@@ -30,6 +31,57 @@ export default function DashboardTab({
     const birthDate = new Date(item.tanggal_lahir);
     return birthDate.getMonth() === selectedMonth;
   });
+
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth());
+  const [calendarYear, setCalendarYear] = useState(() => new Date().getFullYear());
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
+
+  const handlePrevMonth = () => {
+    setSelectedCalendarDay(null);
+    if (calendarMonth === 0) {
+      setCalendarMonth(11);
+      setCalendarYear(prev => prev - 1);
+    } else {
+      setCalendarMonth(prev => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    setSelectedCalendarDay(null);
+    if (calendarMonth === 11) {
+      setCalendarMonth(0);
+      setCalendarYear(prev => prev + 1);
+    } else {
+      setCalendarMonth(prev => prev + 1);
+    }
+  };
+
+  const calendarCells = useMemo(() => {
+    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+    const firstDayIndex = new Date(calendarYear, calendarMonth, 1).getDay();
+    const cells = [];
+    for (let i = 0; i < firstDayIndex; i++) {
+      cells.push(null);
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push(d);
+    }
+    return cells;
+  }, [calendarMonth, calendarYear]);
+
+  const getEventsForDay = (day) => {
+    if (!day) return [];
+    const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return (events || []).filter(e => e.tanggal === dateStr);
+  };
+
+  const eventsInCalendarMonth = useMemo(() => {
+    return (events || []).filter(item => {
+      if (!item.tanggal) return false;
+      const eventDate = new Date(item.tanggal);
+      return eventDate.getMonth() === calendarMonth && eventDate.getFullYear() === calendarYear;
+    });
+  }, [events, calendarMonth, calendarYear]);
 
   const getAgeToReach = (birthDateString) => {
     if (!birthDateString) return 0;
@@ -254,7 +306,7 @@ export default function DashboardTab({
       </div>
 
       {/* Grid: Events & Demographics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Reminder Kegiatan Terdekat */}
         <div className="bg-white border border-stone-200/60 p-5 rounded-xl flex flex-col">
           <div className="flex items-center justify-between mb-4 border-b border-stone-100 pb-2">
@@ -291,6 +343,138 @@ export default function DashboardTab({
                 <p className="text-xs text-stone-400">Tidak ada jadwal ibadah dalam 7 hari ke depan.</p>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Kalender Event Interaktif */}
+        <div className="bg-white border border-stone-200/60 p-5 rounded-xl flex flex-col justify-between shadow-xs">
+          <div className="space-y-4">
+            {/* Header Kalender */}
+            <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+              <h3 className="text-sm font-semibold text-stone-850 tracking-tight">Kalender Event</h3>
+              <div className="flex items-center space-x-2 bg-stone-50 border border-stone-200/60 px-2 py-0.5 rounded-lg">
+                <button
+                  onClick={handlePrevMonth}
+                  className="p-1 hover:bg-stone-200/60 rounded text-stone-500 hover:text-stone-800 transition-colors focus:outline-none font-bold"
+                  title="Bulan Sebelumnya"
+                >
+                  &larr;
+                </button>
+                <span className="text-[10.5px] font-bold text-stone-700 select-none min-w-[75px] text-center uppercase tracking-wide">
+                  {namaBulan[calendarMonth]} {calendarYear}
+                </span>
+                <button
+                  onClick={handleNextMonth}
+                  className="p-1 hover:bg-stone-200/60 rounded text-stone-500 hover:text-stone-800 transition-colors focus:outline-none font-bold"
+                  title="Bulan Berikutnya"
+                >
+                  &rarr;
+                </button>
+              </div>
+            </div>
+
+            {/* Grid Kalender */}
+            <div className="space-y-1 my-1">
+              <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((d) => (
+                  <span key={d} className="py-1">{d}</span>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {calendarCells.map((day, idx) => {
+                  if (day === null) {
+                    return <div key={`empty-${idx}`} className="aspect-square" />;
+                  }
+
+                  const dayEvents = getEventsForDay(day);
+                  const hasEvents = dayEvents.length > 0;
+                  const isSelected = selectedCalendarDay === day;
+                  
+                  // Today logic (June 13, 2026)
+                  const isToday = day === 13 && calendarMonth === 5 && calendarYear === 2026;
+
+                  return (
+                    <button
+                      key={`day-${day}`}
+                      onClick={() => {
+                        setSelectedCalendarDay(prev => prev === day ? null : day);
+                      }}
+                      className={`aspect-square rounded-full flex flex-col items-center justify-center relative text-xs transition-all focus:outline-none ${
+                        isSelected
+                          ? `${accentClasses.bgPrimary} font-bold shadow-xs text-white`
+                          : hasEvents
+                            ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-250 font-bold'
+                            : 'hover:bg-stone-100 text-stone-700'
+                      } ${isToday && !isSelected ? 'ring-1 ring-stone-900 font-bold' : ''}`}
+                    >
+                      <span>{day}</span>
+                      {hasEvents && !isSelected && (
+                        <span className="absolute bottom-1 w-1 h-1 bg-amber-500 rounded-full" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* List Event Terkait */}
+            <div className="border-t border-stone-100 pt-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-bold text-stone-450 uppercase tracking-wider">
+                  {selectedCalendarDay 
+                    ? `Event Tanggal ${selectedCalendarDay} ${namaBulan[calendarMonth]}` 
+                    : `Semua Event Bulan Ini`}
+                </h4>
+                {selectedCalendarDay && (
+                  <button
+                    onClick={() => setSelectedCalendarDay(null)}
+                    className="text-[9px] font-semibold text-stone-400 hover:text-stone-600 focus:outline-none"
+                  >
+                    Reset Filter
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
+                {(() => {
+                  const displayList = selectedCalendarDay 
+                    ? getEventsForDay(selectedCalendarDay) 
+                    : eventsInCalendarMonth;
+
+                  if (displayList.length === 0) {
+                    return (
+                      <div className="py-4 text-center bg-stone-50/20 rounded-lg border border-dashed border-stone-200/50">
+                        <p className="text-[10.5px] text-stone-450 italic">
+                          {selectedCalendarDay 
+                            ? 'Tidak ada kegiatan pada tanggal ini.' 
+                            : 'Tidak ada kegiatan di bulan ini.'}
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return displayList.map((event) => (
+                    <div key={event.id} className="p-2 border border-stone-100 rounded-lg bg-stone-50/50 flex flex-col space-y-1 font-sans">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-stone-850 truncate">{event.nama}</span>
+                        <span className="text-[9.5px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.25 rounded whitespace-nowrap">
+                          {new Date(event.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[9.5px] text-stone-400 font-medium">
+                        <span>{event.waktu}</span>
+                        <span className="truncate max-w-[120px]">{event.lokasi}</span>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-stone-100 pt-3.5 mt-3 text-center">
+            <span className="text-[10px] text-stone-400 font-medium">
+              Gunakan panah navigasi untuk melihat agenda bulan depan/lainnya
+            </span>
           </div>
         </div>
 

@@ -15,6 +15,12 @@ export default function EventTab({ accentClasses }) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
+  const [filterMonth, setFilterMonth] = useState('all');
+  const namaBulan = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+
   const initialFormState = {
     nama: '',
     tanggal: '',
@@ -81,6 +87,14 @@ export default function EventTab({ accentClasses }) {
   // Sort events by date descending
   const sortedEvents = [...events].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
 
+  // Filter events by selected month
+  const filteredEvents = sortedEvents.filter(item => {
+    if (filterMonth === 'all') return true;
+    if (!item.tanggal) return false;
+    const date = new Date(item.tanggal);
+    return date.getMonth() === Number(filterMonth);
+  });
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -98,6 +112,26 @@ export default function EventTab({ accentClasses }) {
         </button>
       </div>
 
+      {/* Control Bar (Filter & Summary) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center space-x-2 bg-white border border-stone-200/60 px-3 py-1.5 rounded-lg shadow-xs">
+          <span className="text-[10px] font-bold text-stone-450 uppercase tracking-wider">Filter Bulan:</span>
+          <select
+            value={filterMonth}
+            onChange={(e) => setFilterMonth(e.target.value)}
+            className="py-0.5 px-1 border-transparent rounded text-xs bg-transparent text-stone-700 font-semibold focus:outline-none focus:ring-0 cursor-pointer focus:border-stone-400"
+          >
+            <option value="all">Semua Bulan</option>
+            {namaBulan.map((name, index) => (
+              <option key={index} value={index}>{name}</option>
+            ))}
+          </select>
+        </div>
+        <span className="text-[10.5px] font-bold text-stone-400 uppercase tracking-wide bg-stone-50/50 px-2.5 py-1 rounded border border-stone-200/40">
+          Total: {filteredEvents.length} Event
+        </span>
+      </div>
+
       {/* Table Section */}
       <div className="bg-white border border-stone-200/60 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
@@ -113,8 +147,8 @@ export default function EventTab({ accentClasses }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100 text-xs">
-              {sortedEvents.length > 0 ? (
-                sortedEvents.map((item) => {
+              {filteredEvents.length > 0 ? (
+                filteredEvents.map((item) => {
                   const eventDate = new Date(item.tanggal);
                   const isPast = eventDate < new Date("2026-06-07");
                   return (

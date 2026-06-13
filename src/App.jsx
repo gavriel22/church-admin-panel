@@ -21,6 +21,7 @@ export default function App() {
     pelayanan,
     keuangan,
     jadwal,
+    events,
     saveProfil,
     addJemaat,
     updateJemaat,
@@ -114,6 +115,7 @@ export default function App() {
             pelayanan={pelayanan}
             keuangan={keuangan}
             jadwal={jadwal}
+            events={events}
             onQuickAction={handleQuickAction}
             accentClasses={accentClasses}
           />
