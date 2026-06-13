@@ -11,6 +11,7 @@ import PelayananTab from './components/PelayananTab';
 import KeuanganTab from './components/KeuanganTab';
 import PengaturanTab from './components/PengaturanTab';
 import LandingPage from './components/LandingPage';
+import JadwalPetugas from './components/JadwalPetugas';
 import { ChurchContext } from './context/ChurchContext';
 
 export default function App() {
@@ -143,6 +144,12 @@ export default function App() {
             accentClasses={accentClasses}
             externalOpenJadwalModal={quickActionJadwal}
             setExternalOpenJadwalModal={setQuickActionJadwal}
+          />
+        );
+      case 'jadwal-petugas':
+        return (
+          <JadwalPetugas
+            accentClasses={accentClasses}
           />
         );
       case 'pengumuman':

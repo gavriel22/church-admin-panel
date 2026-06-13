@@ -63,6 +63,27 @@ export function ChurchProvider({ children }) {
     return saved ? JSON.parse(saved) : [...initialKategoriUsia];
   });
 
+  const [kategoriTransaksi, setKategoriTransaksi] = useState(() => {
+    const saved = localStorage.getItem('church_kategori_transaksi');
+    if (saved) return JSON.parse(saved);
+    return [
+      { id: 1, nama_kategori: "Persembahan Mingguan", tipe: "Pemasukan" },
+      { id: 2, nama_kategori: "Persepuluhan", tipe: "Pemasukan" },
+      { id: 3, nama_kategori: "Donasi Khusus", tipe: "Pemasukan" },
+      { id: 4, nama_kategori: "Bunga Bank", tipe: "Pemasukan" },
+      { id: 5, nama_kategori: "Operasional Gedung", tipe: "Pengeluaran" },
+      { id: 6, nama_kategori: "Diakonia", tipe: "Pengeluaran" },
+      { id: 7, nama_kategori: "Sekretariat", tipe: "Pengeluaran" },
+      { id: 8, nama_kategori: "Honor Pembicara", tipe: "Pengeluaran" },
+      { id: 9, nama_kategori: "Pembangunan", tipe: "Pengeluaran" }
+    ];
+  });
+
+  const [jadwalPetugas, setJadwalPetugas] = useState(() => {
+    const saved = localStorage.getItem('church_jadwal_petugas');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   // Save to LocalStorage whenever state changes to maintain persistence
   useEffect(() => {
     localStorage.setItem('church_profil', JSON.stringify(profil));
@@ -99,6 +120,14 @@ export function ChurchProvider({ children }) {
   useEffect(() => {
     localStorage.setItem('church_kategori_usia', JSON.stringify(kategoriUsia));
   }, [kategoriUsia]);
+
+  useEffect(() => {
+    localStorage.setItem('church_kategori_transaksi', JSON.stringify(kategoriTransaksi));
+  }, [kategoriTransaksi]);
+
+  useEffect(() => {
+    localStorage.setItem('church_jadwal_petugas', JSON.stringify(jadwalPetugas));
+  }, [jadwalPetugas]);
 
   // CRUD Handlers
   
@@ -243,6 +272,28 @@ export function ChurchProvider({ children }) {
     setKategoriUsia(prev => prev.filter(item => item.id !== id));
   };
 
+  // 10. Kategori Transaksi
+  const addKategoriTransaksi = (item) => {
+    setKategoriTransaksi(prev => [...prev, item]);
+  };
+  const updateKategoriTransaksi = (updated) => {
+    setKategoriTransaksi(prev => prev.map(item => item.id === updated.id ? updated : item));
+  };
+  const deleteKategoriTransaksi = (id) => {
+    setKategoriTransaksi(prev => prev.filter(item => item.id !== id));
+  };
+
+  // 11. Jadwal Petugas
+  const addJadwalPetugas = (item) => {
+    setJadwalPetugas(prev => [...prev, item]);
+  };
+  const updateJadwalPetugas = (updated) => {
+    setJadwalPetugas(prev => prev.map(item => item.id === updated.id ? updated : item));
+  };
+  const deleteJadwalPetugas = (id) => {
+    setJadwalPetugas(prev => prev.filter(item => item.id !== id));
+  };
+
   // Reset database back to original defaults
   const resetDatabase = () => {
     setProfil({
@@ -257,6 +308,18 @@ export function ChurchProvider({ children }) {
     setEvents([...initialEvents]);
     setKategoriKantong([...initialKategoriKantong]);
     setKategoriUsia([...initialKategoriUsia]);
+    setKategoriTransaksi([
+      { id: 1, nama_kategori: "Persembahan Mingguan", tipe: "Pemasukan" },
+      { id: 2, nama_kategori: "Persepuluhan", tipe: "Pemasukan" },
+      { id: 3, nama_kategori: "Donasi Khusus", tipe: "Pemasukan" },
+      { id: 4, nama_kategori: "Bunga Bank", tipe: "Pemasukan" },
+      { id: 5, nama_kategori: "Operasional Gedung", tipe: "Pengeluaran" },
+      { id: 6, nama_kategori: "Diakonia", tipe: "Pengeluaran" },
+      { id: 7, nama_kategori: "Sekretariat", tipe: "Pengeluaran" },
+      { id: 8, nama_kategori: "Honor Pembicara", tipe: "Pengeluaran" },
+      { id: 9, nama_kategori: "Pembangunan", tipe: "Pengeluaran" }
+    ]);
+    setJadwalPetugas([]);
   };
 
   return (
@@ -270,6 +333,8 @@ export function ChurchProvider({ children }) {
       events,
       kategoriKantong,
       kategoriUsia,
+      kategoriTransaksi,
+      jadwalPetugas,
       saveProfil,
       addJemaat,
       updateJemaat,
@@ -295,6 +360,12 @@ export function ChurchProvider({ children }) {
       addKategoriUsia,
       updateKategoriUsia,
       deleteKategoriUsia,
+      addKategoriTransaksi,
+      updateKategoriTransaksi,
+      deleteKategoriTransaksi,
+      addJadwalPetugas,
+      updateJadwalPetugas,
+      deleteJadwalPetugas,
       resetDatabase
     }}>
       {children}

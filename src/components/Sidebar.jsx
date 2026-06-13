@@ -9,7 +9,8 @@ import {
   Settings, 
   X,
   Globe,
-  Clock
+  Clock,
+  ClipboardCheck
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen, accentClasses }) {
@@ -19,6 +20,7 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen, ac
     { id: 'profil', label: 'Profil Gereja', icon: Church },
     { id: 'jemaat', label: 'Jemaat', icon: Users },
     { id: 'jadwal', label: 'Jadwal Ibadah', icon: Clock },
+    { id: 'jadwal-petugas', label: 'Jadwal Petugas', icon: ClipboardCheck },
     { id: 'pengumuman', label: 'Pengumuman', icon: Megaphone },
     { id: 'event', label: 'Event Terdekat', icon: Calendar },
     { id: 'keuangan', label: 'Keuangan', icon: Wallet },
