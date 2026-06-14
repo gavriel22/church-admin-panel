@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { 
   Church, 
   HeartHandshake, 
@@ -8,7 +8,9 @@ import {
   MapPin, 
   Clock, 
   ArrowUpRight,
-  Quote
+  Quote,
+  Menu,
+  X
 } from 'lucide-react';
 import { ChurchContext } from '../context/ChurchContext';
 
@@ -24,6 +26,8 @@ export default function LandingPage({
     pelayanan,
     events
   } = useContext(ChurchContext);
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Safe defaults if data is missing
   const namaGereja = profil.namaGereja || "Gereja Kasih Karunia";
@@ -84,14 +88,21 @@ export default function LandingPage({
   return (
     <div className="min-h-screen bg-stone-50 text-stone-800 font-sans selection:bg-stone-200 selection:text-stone-900 scroll-smooth">
       {/* 1. Navbar */}
-      <nav className="sticky top-0 z-50 bg-white/85 backdrop-blur-md border-b border-stone-100 px-6 py-4">
+      <nav className="sticky top-0 z-50 bg-white/85 backdrop-blur-md border-b border-stone-100 px-4 sm:px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           {/* Logo / Church Name */}
-          <a href="#" className="flex items-center space-x-2.5 group" onClick={(e) => handleScrollToSection(e, 'hero')}>
-            <div className={`p-1.5 rounded-lg text-white ${accentClasses.bgPrimary || 'bg-amber-600'}`}>
+          <a 
+            href="#" 
+            className="flex items-center space-x-2.5 group" 
+            onClick={(e) => {
+              handleScrollToSection(e, 'hero');
+              setIsMenuOpen(false);
+            }}
+          >
+            <div className={`p-1.5 rounded-lg text-white shrink-0 ${accentClasses.bgPrimary || 'bg-amber-600'}`}>
               <Church className="w-5 h-5" />
             </div>
-            <span className="font-semibold text-stone-900 tracking-tight text-base group-hover:text-stone-700 transition-colors">
+            <span className="font-semibold text-stone-900 tracking-tight text-sm sm:text-base group-hover:text-stone-700 transition-colors truncate max-w-[150px] min-[375px]:max-w-[200px] sm:max-w-none">
               {namaGereja}
             </span>
           </a>
@@ -145,49 +156,111 @@ export default function LandingPage({
               )}
             </div>
 
-            <button 
-              onClick={onNavigateToDashboard}
-              className="flex items-center space-x-1.5 px-4 py-2 rounded-lg text-xs font-semibold tracking-wide border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition-all active:scale-[0.98] cursor-pointer"
-            >
-              <span>Dashboard Admin</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center space-x-3">
+              <button 
+                onClick={onNavigateToDashboard}
+                className="hidden sm:flex items-center space-x-1.5 px-4 py-2 rounded-lg text-xs font-semibold tracking-wide border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span>Dashboard Admin</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Hamburger Icon for Mobile */}
+              <button 
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 -mr-2 rounded-lg hover:bg-stone-100 text-stone-500 hover:text-stone-900 md:hidden transition-colors focus:outline-none cursor-pointer"
+                aria-label="Toggle Menu"
+              >
+                {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {isMenuOpen && (
+          <div className="md:hidden pt-4 pb-2 border-t border-stone-100 mt-3 space-y-2 animate-in slide-in-from-top-2 duration-200">
+            <a 
+              href="#tentang" 
+              onClick={(e) => { handleScrollToSection(e, 'tentang'); setIsMenuOpen(false); }}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+            >
+              Tentang
+            </a>
+            <a 
+              href="#gembala" 
+              onClick={(e) => { handleScrollToSection(e, 'gembala'); setIsMenuOpen(false); }}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+            >
+              Gembala
+            </a>
+            <a 
+              href="#jadwal" 
+              onClick={(e) => { handleScrollToSection(e, 'jadwal'); setIsMenuOpen(false); }}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+            >
+              Jadwal
+            </a>
+            <a 
+              href="#pelayanan" 
+              onClick={(e) => { handleScrollToSection(e, 'pelayanan'); setIsMenuOpen(false); }}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+            >
+              Pelayanan
+            </a>
+            <a 
+              href="#pengumuman" 
+              onClick={(e) => { handleScrollToSection(e, 'pengumuman'); setIsMenuOpen(false); }}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+            >
+              Pengumuman
+            </a>
+            {upcomingEvents.length > 0 && (
+              <a 
+                href="#acara" 
+                onClick={(e) => { handleScrollToSection(e, 'acara'); setIsMenuOpen(false); }}
+                className="block px-3 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+              >
+                Acara
+              </a>
+            )}
+            <div className="pt-2 border-t border-stone-100">
+              <button 
+                onClick={() => { onNavigateToDashboard(); setIsMenuOpen(false); }}
+                className="flex w-full items-center justify-center space-x-1.5 px-4 py-2.5 rounded-lg text-xs font-semibold tracking-wide border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span>Dashboard Admin</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* 2. Hero Section */}
-      <section id="hero" className="max-w-6xl mx-auto px-6 py-16 sm:py-20 flex flex-col md:flex-row items-center gap-10 md:gap-16">
+      <section id="hero" className="max-w-6xl mx-auto px-6 py-12 md:py-20 flex flex-col md:flex-row items-center gap-10 md:gap-16">
         {/* Left column: Text */}
-        <div className="flex-1 space-y-6 text-left">
-          <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase border ${accentClasses.badge || 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-            Selamat Datang
-          </span>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-stone-900 leading-tight">
+        <div className="flex-1 flex flex-col justify-center space-y-4 sm:space-y-5 text-left h-full">
+          <div>
+            <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase border ${accentClasses.badge || 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+              Selamat Datang
+            </span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-stone-900 leading-tight">
             {namaGereja}
           </h1>
-          <p className="text-lg text-stone-500 font-light leading-relaxed">
+          <p className="text-base sm:text-lg text-stone-500 font-light leading-relaxed">
             {tagline}
           </p>
-          <div className="pt-2">
-            <a 
-              href="#jadwal"
-              onClick={(e) => handleScrollToSection(e, 'jadwal')}
-              className={`inline-flex items-center space-x-2 px-6 py-3 rounded-lg text-sm font-semibold tracking-wide transition-all active:scale-95 shadow-xs hover:shadow-md ${accentClasses.bgPrimary || 'bg-amber-600 hover:bg-amber-700 text-white'}`}
-            >
-              <span>Lihat Jadwal Ibadah</span>
-              <ArrowRight className="w-4 h-4" />
-            </a>
-          </div>
         </div>
 
         {/* Right column: Image */}
         <div className="flex-1 w-full flex justify-center">
-          <div className="relative p-2 bg-white rounded-2xl border border-stone-200/50 shadow-sm w-full max-w-lg">
+          <div className="relative w-full max-w-lg">
             <img 
               src="https://images.unsplash.com/photo-1478147427282-58a87a120781?auto=format&fit=crop&q=80&w=800&h=500" 
-              alt="Gedung Gereja Kasih Karunia" 
-              className="rounded-xl object-cover aspect-[16/10] w-full"
+              alt={namaGereja} 
+              className="rounded-2xl border border-stone-100 shadow-xs w-full h-auto object-cover aspect-[16/10] sm:aspect-video md:aspect-[16/10]"
             />
           </div>
         </div>
@@ -195,7 +268,7 @@ export default function LandingPage({
  
 
       {/* 4. Tentang Kami */}
-      <section id="tentang" className="max-w-5xl mx-auto px-6 py-12 sm:py-16 space-y-12">
+      <section id="tentang" className="max-w-5xl mx-auto px-6 py-12 md:py-20 space-y-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
           <div className="lg:col-span-5 space-y-4">
             <span className={`text-[10px] font-bold tracking-widest uppercase ${accentClasses.text || 'text-amber-700'}`}>
@@ -249,7 +322,7 @@ export default function LandingPage({
       </section>
 
       {/* 5. Profil Gembala Sidang (New Section) */}
-      <section id="gembala" className="bg-white border-y border-stone-100 py-12 sm:py-16 px-6">
+      <section id="gembala" className="bg-white border-y border-stone-100 py-12 md:py-20 px-6">
         <div className="max-w-5xl mx-auto space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <span className={`text-[10px] font-bold tracking-widest uppercase ${accentClasses.text || 'text-amber-700'}`}>
@@ -290,7 +363,7 @@ export default function LandingPage({
       </section>
 
       {/* 6. Jadwal Ibadah (No Limitation) */}
-      <section id="jadwal" className="max-w-5xl mx-auto py-12 sm:py-16 px-6 space-y-12">
+      <section id="jadwal" className="max-w-5xl mx-auto py-12 md:py-20 px-6 space-y-12">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
           <span className={`text-[10px] font-bold tracking-widest uppercase ${accentClasses.text || 'text-amber-700'}`}>
             Jadwal Ibadah
@@ -303,7 +376,7 @@ export default function LandingPage({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {jadwal.map((item) => (
             <div 
               key={item.id}
@@ -336,7 +409,7 @@ export default function LandingPage({
       </section>
 
       {/* 7. Pelayanan Kami (Max 6 Cards) */}
-      <section id="pelayanan" className="bg-white border-y border-stone-100 py-12 sm:py-16 px-6 space-y-12">
+      <section id="pelayanan" className="bg-white border-y border-stone-100 py-12 md:py-20 px-6 space-y-12">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
           <span className={`text-[10px] font-bold tracking-widest uppercase ${accentClasses.text || 'text-amber-700'}`}>
             Pelayanan Kami
@@ -378,7 +451,7 @@ export default function LandingPage({
       </section>
 
       {/* 8. Pengumuman Terdekat (Max 6 Cards, Pinned First) */}
-      <section id="pengumuman" className="max-w-5xl mx-auto py-12 sm:py-16 px-6 space-y-12">
+      <section id="pengumuman" className="max-w-5xl mx-auto py-12 md:py-20 px-6 space-y-12">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
           <span className={`text-[10px] font-bold tracking-widest uppercase ${accentClasses.text || 'text-amber-700'}`}>
             Pengumuman
@@ -391,7 +464,7 @@ export default function LandingPage({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedPengumuman.map((item) => {
             const formattedDate = new Date(item.tanggal).toLocaleDateString('id-ID', {
               day: 'numeric',
@@ -431,7 +504,7 @@ export default function LandingPage({
 
       {/* 9. Event Terdekat (New Section - Max 4 Cards, Chronological, Upcoming only) */}
       {upcomingEvents.length > 0 && (
-        <section id="acara" className="bg-white border-y border-stone-100 py-12 sm:py-16 px-6 space-y-12">
+        <section id="acara" className="bg-white border-y border-stone-100 py-12 md:py-20 px-6 space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <span className={`text-[10px] font-bold tracking-widest uppercase ${accentClasses.text || 'text-amber-700'}`}>
               Agenda Acara
@@ -444,7 +517,7 @@ export default function LandingPage({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {upcomingEvents.map((item) => {
               const formattedDate = new Date(item.tanggal).toLocaleDateString('id-ID', {
                 weekday: 'long',
