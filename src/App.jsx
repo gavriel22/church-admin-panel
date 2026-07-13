@@ -109,15 +109,6 @@ export default function App() {
 
   // Tab Content Renderer
   const renderTabContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex flex-col items-center justify-center py-32 text-stone-500">
-          <div className="w-8 h-8 border-2 border-stone-200 border-t-amber-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-sm font-medium tracking-wide">Menghubungkan ke database...</p>
-        </div>
-      );
-    }
-
     switch (activeTab) {
       case 'dashboard':
         return (
@@ -209,6 +200,15 @@ export default function App() {
         );
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50 text-stone-500">
+        <div className="w-8 h-8 border-2 border-stone-200 border-t-amber-600 rounded-full animate-spin mb-4"></div>
+        <p className="text-sm font-medium tracking-wide">Menghubungkan ke database...</p>
+      </div>
+    );
+  }
 
   if (activeTab === 'landing') {
     return (
