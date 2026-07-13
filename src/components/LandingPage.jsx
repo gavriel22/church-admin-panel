@@ -1,3 +1,4 @@
+// Author: Gavriel Theofilus Nugroho
 import { useContext, useState } from 'react';
 import { 
   Church, 
@@ -19,6 +20,7 @@ export default function LandingPage({
   accentClasses = {}
 }) {
   const {
+    isLoading,
     profil,
     jemaat,
     jadwal,
@@ -28,6 +30,15 @@ export default function LandingPage({
   } = useContext(ChurchContext);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50 text-stone-500 font-sans">
+        <div className="w-8 h-8 border-2 border-stone-200 border-t-amber-600 rounded-full animate-spin mb-4"></div>
+        <p className="text-xs font-semibold tracking-wider uppercase text-stone-400">Memuat Data Gereja...</p>
+      </div>
+    );
+  }
 
   // Safe defaults if data is missing
   const namaGereja = profil.namaGereja || "Gereja Kasih Karunia";
@@ -66,8 +77,9 @@ export default function LandingPage({
     })
     .slice(0, 6);
 
-  // 3. Event Terdekat (New): Max 3-4 cards, filtered relative to June 7, 2026, sorted by closest upcoming date
-  const systemToday = new Date("2026-06-07T00:00:00");
+  // 3. Event Terdekat (New): Max 3-4 cards, filtered relative to current date, sorted by closest upcoming date
+  const systemToday = new Date();
+  systemToday.setHours(0, 0, 0, 0);
   const upcomingEvents = events
     .filter(event => {
       const eventDate = new Date(event.tanggal + "T00:00:00");
