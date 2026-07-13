@@ -15,11 +15,13 @@ import { ChurchContext } from './ChurchContext';
 import { supabase } from '../lib/supabaseClient';
 
 // Helper mappers to handle schema differences between DB (snake_case/Postgres) and App (camelCase/UI)
+// and filter out unsupported columns to prevent Supabase PGRST204 column mismatch errors.
+
 const mapProfileFromDb = (dbProfile) => {
   if (!dbProfile) return null;
   return {
     id: dbProfile.id,
-    namaGereja: dbProfile.nama_gereja || dbProfile.namaGereja || dbProfile.nama || '',
+    namaGereja: dbProfile.nama || '',
     tagline: dbProfile.tagline || '',
     deskripsi: dbProfile.deskripsi || '',
     alamat: dbProfile.alamat || '',
@@ -30,10 +32,10 @@ const mapProfileFromDb = (dbProfile) => {
       ? dbProfile.misi 
       : (typeof dbProfile.misi === 'string' ? JSON.parse(dbProfile.misi) : []),
     sejarah: dbProfile.sejarah || '',
-    tahunBerdiri: dbProfile.tahun_berdiri || dbProfile.tahunBerdiri || 2010,
-    namaGembala: dbProfile.nama_gembala || dbProfile.namaGembala || dbProfile.gembala || '',
-    pesanGembala: dbProfile.pesan_gembala || dbProfile.pesanGembala || '',
-    fotoGembala: dbProfile.foto_gembala || dbProfile.fotoGembala || ''
+    tahunBerdiri: 2010, // default fallback
+    namaGembala: dbProfile.gembala || '',
+    pesanGembala: 'Selamat datang di persekutuan kami.', // default fallback
+    fotoGembala: dbProfile.foto_gembala || ''
   };
 };
 
@@ -41,7 +43,6 @@ const mapProfileToDb = (appProfile) => {
   return {
     id: appProfile.id || 1,
     nama: appProfile.namaGereja || '',
-    nama_gereja: appProfile.namaGereja || '',
     tagline: appProfile.tagline || '',
     deskripsi: appProfile.deskripsi || '',
     alamat: appProfile.alamat || '',
@@ -50,14 +51,53 @@ const mapProfileToDb = (appProfile) => {
     visi: appProfile.visi || '',
     misi: Array.isArray(appProfile.misi) ? appProfile.misi : [],
     sejarah: appProfile.sejarah || '',
-    tahun_berdiri: appProfile.tahunBerdiri || 2010,
-    tahunBerdiri: appProfile.tahunBerdiri || 2010,
     gembala: appProfile.namaGembala || '',
-    nama_gembala: appProfile.namaGembala || '',
-    pesan_gembala: appProfile.pesanGembala || '',
-    pesanGembala: appProfile.pesanGembala || '',
-    foto_gembala: appProfile.fotoGembala || '',
-    fotoGembala: appProfile.fotoGembala || ''
+    foto_gembala: appProfile.fotoGembala || ''
+  };
+};
+
+const mapJemaatFromDb = (dbJemaat) => {
+  if (!dbJemaat) return null;
+  return {
+    id: dbJemaat.id,
+    nama: dbJemaat.nama || '',
+    nomor_anggota: dbJemaat.nomor_anggota || '',
+    gender: dbJemaat.gender || 'Laki-laki',
+    alamat: dbJemaat.alamat || '',
+    telepon: dbJemaat.telepon || '',
+    tanggal_lahir: dbJemaat.tanggal_lahir || '',
+    tanggal_baptis: dbJemaat.tanggal_baptis || '',
+    status: dbJemaat.status || 'Aktif',
+    
+    // Fallbacks for missing columns in SQL schema compared to initialJemaat
+    no_kk: '-',
+    nik: dbJemaat.nomor_anggota || '-',
+    tempat_tanggal_lahir: dbJemaat.tanggal_lahir ? `Lahir: ${dbJemaat.tanggal_lahir}` : '-',
+    jenis_kelamin: dbJemaat.gender || 'Laki-laki',
+    golongan_darah: 'Tidak Tahu',
+    alamat_lengkap: dbJemaat.alamat || '',
+    agama: 'Kristen',
+    status_perkawinan: 'Kawin',
+    pekerjaan: 'Jemaat',
+    kewarganegaraan: 'WNI',
+    peran: 'Jemaat',
+    kelompok_sel: 'Sion',
+    kontak: dbJemaat.telepon || '',
+    hubungan_keluarga: 'Kepala Keluarga'
+  };
+};
+
+const mapJemaatToDb = (appJemaat) => {
+  return {
+    id: appJemaat.id,
+    nama: appJemaat.nama || '',
+    nomor_anggota: appJemaat.nomor_anggota || appJemaat.nik || '',
+    gender: appJemaat.gender || appJemaat.jenis_kelamin || 'Laki-laki',
+    alamat: appJemaat.alamat || appJemaat.alamat_lengkap || '',
+    telepon: appJemaat.telepon || appJemaat.kontak || '',
+    tanggal_lahir: appJemaat.tanggal_lahir || null,
+    tanggal_baptis: appJemaat.tanggal_baptis || null,
+    status: appJemaat.status || 'Aktif'
   };
 };
 
@@ -65,25 +105,21 @@ const mapJadwalFromDb = (dbJadwal) => {
   if (!dbJadwal) return null;
   return {
     id: dbJadwal.id,
-    nama: dbJadwal.nama || dbJadwal.nama_ibadah || '',
+    nama: dbJadwal.nama_ibadah || '',
     hari: dbJadwal.hari || '',
-    waktu: dbJadwal.waktu || dbJadwal.jam || '',
-    lokasi: dbJadwal.lokasi || dbJadwal.tempat || '',
-    deskripsi: dbJadwal.deskripsi || ''
+    waktu: dbJadwal.jam || '',
+    lokasi: dbJadwal.tempat || '',
+    deskripsi: 'Ibadah rutin mingguan.'
   };
 };
 
 const mapJadwalToDb = (appJadwal) => {
   return {
     id: appJadwal.id,
-    nama: appJadwal.nama || '',
     nama_ibadah: appJadwal.nama || '',
     hari: appJadwal.hari || '',
-    waktu: appJadwal.waktu || '',
     jam: appJadwal.waktu || '',
-    lokasi: appJadwal.lokasi || '',
-    tempat: appJadwal.lokasi || '',
-    deskripsi: appJadwal.deskripsi || ''
+    tempat: appJadwal.lokasi || ''
   };
 };
 
@@ -92,9 +128,9 @@ const mapPengumumanFromDb = (dbPengumuman) => {
   return {
     id: dbPengumuman.id,
     judul: dbPengumuman.judul || '',
-    deskripsi: dbPengumuman.deskripsi || dbPengumuman.isi || '',
+    deskripsi: dbPengumuman.isi || '',
     tanggal: dbPengumuman.tanggal || '',
-    pinned: dbPengumuman.pinned !== undefined ? !!dbPengumuman.pinned : dbPengumuman.status === 'Pinned'
+    pinned: dbPengumuman.status === 'Pinned'
   };
 };
 
@@ -102,10 +138,8 @@ const mapPengumumanToDb = (appPengumuman) => {
   return {
     id: appPengumuman.id,
     judul: appPengumuman.judul || '',
-    deskripsi: appPengumuman.deskripsi || '',
     isi: appPengumuman.deskripsi || '',
     tanggal: appPengumuman.tanggal || null,
-    pinned: !!appPengumuman.pinned,
     status: appPengumuman.pinned ? 'Pinned' : 'Aktif'
   };
 };
@@ -114,10 +148,10 @@ const mapPelayananFromDb = (dbPelayanan) => {
   if (!dbPelayanan) return null;
   return {
     id: dbPelayanan.id,
-    nama: dbPelayanan.nama || dbPelayanan.nama_pelayanan || '',
+    nama: dbPelayanan.nama_pelayanan || '',
     deskripsi: dbPelayanan.deskripsi || '',
-    anggota: dbPelayanan.anggota !== undefined ? Number(dbPelayanan.anggota) : Number(dbPelayanan.jumlah_anggota || 0),
-    pertemuan: dbPelayanan.pertemuan || '',
+    anggota: Number(dbPelayanan.jumlah_anggota || 0),
+    pertemuan: 'Sabtu / Minggu (Briefing pelayanan)',
     ketua: dbPelayanan.ketua || ''
   };
 };
@@ -125,13 +159,10 @@ const mapPelayananFromDb = (dbPelayanan) => {
 const mapPelayananToDb = (appPelayanan) => {
   return {
     id: appPelayanan.id,
-    nama: appPelayanan.nama || '',
     nama_pelayanan: appPelayanan.nama || '',
     deskripsi: appPelayanan.deskripsi || '',
-    anggota: Number(appPelayanan.anggota || 0),
-    jumlah_anggota: Number(appPelayanan.anggota || 0),
-    pertemuan: appPelayanan.pertemuan || '',
-    ketua: appPelayanan.ketua || ''
+    ketua: appPelayanan.ketua || '',
+    jumlah_anggota: Number(appPelayanan.anggota || 0)
   };
 };
 
@@ -139,26 +170,24 @@ const mapEventFromDb = (dbEvent) => {
   if (!dbEvent) return null;
   return {
     id: dbEvent.id,
-    nama: dbEvent.nama || dbEvent.title || '',
-    tanggal: dbEvent.tanggal || (dbEvent.start ? dbEvent.start.split('T')[0] : ''),
-    waktu: dbEvent.waktu || (dbEvent.start ? new Date(dbEvent.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''),
-    lokasi: dbEvent.lokasi || dbEvent.location || '',
-    deskripsi: dbEvent.deskripsi || dbEvent.description || ''
+    nama: dbEvent.title || '',
+    tanggal: dbEvent.start ? dbEvent.start.split('T')[0] : '',
+    waktu: '08:00 WIB - Selesai',
+    lokasi: dbEvent.location || '',
+    deskripsi: dbEvent.description || ''
   };
 };
 
 const mapEventToDb = (appEvent) => {
   return {
     id: appEvent.id,
-    nama: appEvent.nama || '',
     title: appEvent.nama || '',
-    tanggal: appEvent.tanggal || null,
-    start: appEvent.tanggal ? `${appEvent.tanggal}T${appEvent.waktu ? appEvent.waktu.split(' ')[0] : '00:00:00'}` : null,
-    waktu: appEvent.waktu || '',
-    lokasi: appEvent.lokasi || '',
+    start: appEvent.tanggal ? `${appEvent.tanggal}T00:00:00` : null,
+    description: appEvent.deskripsi || '',
     location: appEvent.lokasi || '',
-    deskripsi: appEvent.deskripsi || '',
-    description: appEvent.deskripsi || ''
+    cost: 0,
+    status: 'Mendatang',
+    banner: ''
   };
 };
 
@@ -166,40 +195,38 @@ const mapKategoriKantongFromDb = (dbKK) => {
   if (!dbKK) return null;
   return {
     id: dbKK.id,
-    nama_kantong: dbKK.nama_kantong || dbKK.nama || '',
-    deskripsi_alokasi: dbKK.deskripsi_alokasi || dbKK.deskripsi || '',
-    warna_badge: dbKK.warna_badge || 'bg-amber-100 text-amber-800'
+    nama_kantong: dbKK.nama || '',
+    deskripsi_alokasi: 'Alokasi Persembahan',
+    warna_badge: 'bg-amber-100 text-amber-800'
   };
 };
 
 const mapKategoriKantongToDb = (appKK) => {
   return {
     id: appKK.id,
-    nama_kantong: appKK.nama_kantong || '',
-    nama: appKK.nama_kantong || '',
-    deskripsi_alokasi: appKK.deskripsi_alokasi || '',
-    deskripsi: appKK.deskripsi_alokasi || '',
-    warna_badge: appKK.warna_badge || ''
+    nama: appKK.nama_kantong || ''
   };
 };
 
 const mapKategoriUsiaFromDb = (dbUsia) => {
   if (!dbUsia) return null;
+  let min = 0, max = 150;
+  if (dbUsia.nama === 'Anak-anak') { min = 0; max = 11; }
+  else if (dbUsia.nama === 'Pemuda') { min = 12; max = 25; }
+  else if (dbUsia.nama === 'Dewasa') { min = 26; max = 59; }
+  else if (dbUsia.nama === 'Lansia') { min = 60; max = 150; }
   return {
     id: dbUsia.id,
-    nama_kategori: dbUsia.nama_kategori || dbUsia.nama || '',
-    usia_min: dbUsia.usia_min !== undefined ? Number(dbUsia.usia_min) : 0,
-    usia_max: dbUsia.usia_max !== undefined ? Number(dbUsia.usia_max) : 120
+    nama_kategori: dbUsia.nama || '',
+    usia_min: min,
+    usia_max: max
   };
 };
 
 const mapKategoriUsiaToDb = (appUsia) => {
   return {
     id: appUsia.id,
-    nama_kategori: appUsia.nama_kategori || '',
-    nama: appUsia.nama_kategori || '',
-    usia_min: Number(appUsia.usia_min || 0),
-    usia_max: Number(appUsia.usia_max || 0)
+    nama: appUsia.nama_kategori || ''
   };
 };
 
@@ -207,7 +234,7 @@ const mapKategoriTransaksiFromDb = (dbKat) => {
   if (!dbKat) return null;
   return {
     id: dbKat.id,
-    nama_kategori: dbKat.nama_kategori || dbKat.nama || '',
+    nama_kategori: dbKat.nama_kategori || '',
     tipe: dbKat.tipe || 'Pemasukan'
   };
 };
@@ -216,7 +243,6 @@ const mapKategoriTransaksiToDb = (appKat) => {
   return {
     id: appKat.id,
     nama_kategori: appKat.nama_kategori || '',
-    nama: appKat.nama_kategori || '',
     tipe: appKat.tipe || 'Pemasukan'
   };
 };
@@ -225,7 +251,7 @@ const mapJadwalPetugasFromDb = (dbJP) => {
   if (!dbJP) return null;
   return {
     id: dbJP.id,
-    jadwal_ibadah_id: dbJP.jadwal_ibadah_id || dbJP.ibadah_id || '',
+    jadwal_ibadah_id: dbJP.ibadah_id || '',
     tanggal: dbJP.tanggal || '',
     petugas: Array.isArray(dbJP.petugas) 
       ? dbJP.petugas 
@@ -236,7 +262,6 @@ const mapJadwalPetugasFromDb = (dbJP) => {
 const mapJadwalPetugasToDb = (appJP) => {
   return {
     id: appJP.id,
-    jadwal_ibadah_id: appJP.jadwal_ibadah_id || null,
     ibadah_id: appJP.jadwal_ibadah_id || null,
     tanggal: appJP.tanggal || null,
     petugas: Array.isArray(appJP.petugas) ? appJP.petugas : []
@@ -290,12 +315,11 @@ export function ChurchProvider({ children }) {
       // 2. Jemaat
       const { data: jemaatData, error: jemaatError } = await supabase
         .from('jemaat')
-        .select('*')
-        .order('nama', { ascending: true });
+        .select('*');
       if (jemaatError) {
         console.warn('Gagal memuat jemaat dari Supabase. Menggunakan data lokal.', jemaatError.message);
       } else if (jemaatData) {
-        setJemaat(jemaatData);
+        setJemaat(jemaatData.map(mapJemaatFromDb));
       }
 
       // 3. Jadwal Ibadah
@@ -428,7 +452,7 @@ export function ChurchProvider({ children }) {
 
   // 2. Jemaat
   const addJemaat = async (item) => {
-    const dataToInsert = { ...item };
+    const dataToInsert = mapJemaatToDb(item);
     if (!dataToInsert.id || typeof dataToInsert.id === 'number' || (typeof dataToInsert.id === 'string' && dataToInsert.id.trim() === '')) {
       delete dataToInsert.id;
     }
@@ -440,21 +464,22 @@ export function ChurchProvider({ children }) {
     if (error) {
       console.error('Error adding jemaat to Supabase:', error);
     } else if (data && data[0]) {
-      setJemaat(prev => [...prev, data[0]]);
+      setJemaat(prev => [...prev, mapJemaatFromDb(data[0])]);
     }
   };
 
   const updateJemaat = async (updated) => {
+    const dataToUpdate = mapJemaatToDb(updated);
     const { data, error } = await supabase
       .from('jemaat')
-      .update(updated)
+      .update(dataToUpdate)
       .eq('id', updated.id)
       .select();
 
     if (error) {
       console.error('Error updating jemaat in Supabase:', error);
     } else if (data && data[0]) {
-      setJemaat(prev => prev.map(item => item.id === updated.id ? data[0] : item));
+      setJemaat(prev => prev.map(item => item.id === updated.id ? mapJemaatFromDb(data[0]) : item));
     }
   };
 
@@ -950,8 +975,8 @@ export function ChurchProvider({ children }) {
         fotoGembala: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400&h=500"
       })]);
 
-      // Jemaat (generate new simple items to let DB assign IDs if necessary, or pass initialJemaat directly)
-      const cleanJemaat = initialJemaat.map(({ id, ...rest }) => rest);
+      // Jemaat
+      const cleanJemaat = initialJemaat.map(({ id, ...rest }) => mapJemaatToDb(rest));
       await supabase.from('jemaat').insert(cleanJemaat);
 
       // Jadwal Ibadah
