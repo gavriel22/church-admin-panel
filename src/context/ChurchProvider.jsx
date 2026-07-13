@@ -28,9 +28,21 @@ const mapProfileFromDb = (dbProfile) => {
     telepon: dbProfile.telepon || '',
     email: dbProfile.email || '',
     visi: dbProfile.visi || '',
-    misi: Array.isArray(dbProfile.misi) 
-      ? dbProfile.misi 
-      : (typeof dbProfile.misi === 'string' ? JSON.parse(dbProfile.misi) : []),
+    misi: (() => {
+      if (Array.isArray(dbProfile.misi)) return dbProfile.misi;
+      if (typeof dbProfile.misi === 'string') {
+        try {
+          const parsed = JSON.parse(dbProfile.misi);
+          return Array.isArray(parsed) ? parsed : [dbProfile.misi];
+        } catch (e) {
+          if (dbProfile.misi.includes('\n')) {
+            return dbProfile.misi.split('\n').map(item => item.trim()).filter(Boolean);
+          }
+          return [dbProfile.misi];
+        }
+      }
+      return [];
+    })(),
     sejarah: dbProfile.sejarah || '',
     tahunBerdiri: 2010, // default fallback
     namaGembala: dbProfile.gembala || '',
@@ -253,9 +265,19 @@ const mapJadwalPetugasFromDb = (dbJP) => {
     id: dbJP.id,
     jadwal_ibadah_id: dbJP.ibadah_id || '',
     tanggal: dbJP.tanggal || '',
-    petugas: Array.isArray(dbJP.petugas) 
-      ? dbJP.petugas 
-      : (typeof dbJP.petugas === 'string' ? JSON.parse(dbJP.petugas) : (dbJP.petugas || []))
+    petugas: (() => {
+      if (Array.isArray(dbJP.petugas)) return dbJP.petugas;
+      if (typeof dbJP.petugas === 'object' && dbJP.petugas !== null) return dbJP.petugas;
+      if (typeof dbJP.petugas === 'string') {
+        try {
+          return JSON.parse(dbJP.petugas);
+        } catch (e) {
+          console.error('Error parsing petugas JSON:', e);
+          return [];
+        }
+      }
+      return [];
+    })()
   };
 };
 
